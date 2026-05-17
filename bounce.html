@@ -1,0 +1,2932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bounce — Unified Wireframe</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { margin: 0; background: #1a1a1a; font-family: system-ui, sans-serif; }
+.root-layout { display: flex; height: 100vh; overflow: hidden; }
+.left-panel { width: 600px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 16px; overflow-y: auto; background: #1a1a1a; }
+.right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; border-left: 2px solid #444; }
+
+/* ── Customer App ── */
+.journey-tracker { width: 160px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 12px; flex-shrink: 0; margin-top: 40px; }
+.journey-tracker h3 { color: #aaa; font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.journey-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-left: 2px solid #444; padding-left: 10px; cursor: default; position: relative; }
+.journey-item.visited { cursor: pointer; border-left-color: #888; }
+.journey-item.current { border-left-color: #fff; }
+.journey-item .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid #666; background: transparent; flex-shrink: 0; position: absolute; left: -5px; }
+.journey-item.visited .dot { background: #888; border-color: #888; }
+.journey-item.current .dot { background: #fff; border-color: #fff; }
+.journey-label { font-size: 11px; font-family: monospace; color: #555; line-height: 1.3; }
+.journey-item.visited .journey-label { color: #aaa; }
+.journey-item.current .journey-label { color: #fff; font-weight: bold; }
+
+.phone-wrap { display: flex; flex-direction: column; align-items: center; }
+.phone-frame { width: 375px; height: 812px; background: #fff; border: 3px solid #333; border-radius: 40px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.phone-notch { width: 120px; height: 28px; background: #333; border-radius: 0 0 16px 16px; margin: 0 auto; flex-shrink: 0; }
+.phone-screen { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
+.phone-screen::-webkit-scrollbar { width: 3px; }
+.phone-screen::-webkit-scrollbar-track { background: #f0f0f0; }
+.phone-screen::-webkit-scrollbar-thumb { background: #ccc; }
+
+.features-panel { margin-top: 20px; width: 375px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; padding: 16px; }
+.features-panel h3 { color: #fff; font-size: 13px; font-family: monospace; margin-bottom: 4px; }
+.features-panel .screen-name { color: #888; font-size: 11px; font-family: monospace; margin-bottom: 10px; }
+.features-panel ul { list-style: none; }
+.features-panel li { color: #ccc; font-size: 12px; padding: 3px 0; font-family: monospace; }
+.features-panel li::before { content: "→ "; color: #666; }
+
+.screen { flex: 1; display: flex; flex-direction: column; background: #fff; }
+.screen-header { display: flex; align-items: center; gap: 8px; padding: 12px 16px 8px; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; }
+.screen-title { font-size: 16px; font-weight: bold; color: #333; font-family: monospace; }
+.back-btn { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 14px; color: #333; }
+.back-btn:hover { background: #f0f0f0; }
+.screen-body { flex: 1; padding: 16px; overflow-y: auto; }
+
+.bottom-nav { display: flex; border-top: 1px solid #ccc; flex-shrink: 0; }
+.nav-tab { flex: 1; padding: 8px 2px; text-align: center; cursor: pointer; background: none; border: none; border-right: 1px solid #e0e0e0; font-size: 9px; font-family: monospace; color: #888; }
+.nav-tab:last-child { border-right: none; }
+.nav-tab.active { color: #333; font-weight: bold; background: #f0f0f0; }
+.nav-tab .nav-icon { font-size: 15px; display: block; margin-bottom: 2px; }
+
+.btn-primary { width: 100%; padding: 12px; background: #333; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-family: monospace; font-weight: bold; }
+.btn-primary:hover { background: #555; }
+.btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { width: 100%; padding: 10px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; font-family: monospace; }
+.btn-secondary:hover { background: #f0f0f0; }
+.link-btn { background: none; border: none; color: #555; text-decoration: underline; cursor: pointer; font-size: 13px; font-family: monospace; }
+.link-btn:hover { color: #333; }
+
+.input-field { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; font-family: monospace; background: #fff; color: #333; }
+.input-field:focus { outline: none; border-color: #333; }
+.input-group { display: flex; gap: 0; }
+.input-prefix { padding: 10px 12px; background: #f0f0f0; border: 1px solid #ccc; border-right: none; border-radius: 4px 0 0 4px; font-family: monospace; font-size: 14px; color: #333; white-space: nowrap; }
+.input-group .input-field { border-radius: 0 4px 4px 0; }
+
+.card { border: 1px solid #ccc; border-radius: 4px; padding: 14px; margin-bottom: 12px; background: #fff; }
+.card:hover { background: #f8f8f8; }
+
+.img-placeholder { background: #e0e0e0; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.img-placeholder::before, .img-placeholder::after { content: ''; position: absolute; background: #ccc; height: 1px; width: 141%; }
+.img-placeholder::before { transform: rotate(35deg); }
+.img-placeholder::after { transform: rotate(-35deg); }
+.img-placeholder span { z-index: 1; font-size: 11px; color: #999; font-family: monospace; background: #e0e0e0; padding: 2px 4px; }
+
+.sport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.sport-card { border: 1px solid #ccc; border-radius: 4px; padding: 18px 12px; text-align: center; cursor: pointer; background: #fff; }
+.sport-card:hover { background: #f0f0f0; }
+.sport-card .sport-icon { font-size: 26px; display: block; margin-bottom: 6px; }
+.sport-card .sport-name { font-size: 12px; font-family: monospace; color: #333; font-weight: bold; }
+.sport-card .sport-sub { font-size: 10px; font-family: monospace; color: #888; margin-top: 2px; }
+
+.date-picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; }
+.date-picker::-webkit-scrollbar { height: 3px; }
+.date-picker::-webkit-scrollbar-thumb { background: #ccc; }
+.date-chip { flex-shrink: 0; padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; text-align: center; background: #fff; min-width: 52px; }
+.date-chip.selected { background: #333; border-color: #333; }
+.date-chip .dc-day { font-size: 10px; font-family: monospace; color: #888; display: block; }
+.date-chip .dc-date { font-size: 14px; font-family: monospace; font-weight: bold; color: #333; display: block; }
+.date-chip.selected .dc-day, .date-chip.selected .dc-date { color: #fff; }
+
+.slot-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.slot-btn { aspect-ratio: 1; border-radius: 50%; border: 2px solid #333; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-size: 10px; font-family: monospace; font-weight: bold; color: #333; }
+.slot-btn:hover { background: #f0f0f0; }
+.slot-btn.booked { background: #e0e0e0; border-color: #ccc; cursor: not-allowed; color: #999; }
+.slot-btn.selected { background: #333; color: #fff; border-color: #333; }
+.slot-btn.hotspot { border: 2px solid #b8860b; background: #fffbf0; color: #b8860b; cursor: pointer; }
+.slot-btn.hotspot:hover { background: #fff8e0; }
+
+.stepper { display: flex; align-items: center; gap: 12px; }
+.stepper-btn { width: 32px; height: 32px; border: 1px solid #ccc; border-radius: 4px; background: #f0f0f0; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #333; }
+.stepper-btn:hover { background: #e0e0e0; }
+.stepper-val { font-size: 20px; font-weight: bold; font-family: monospace; color: #333; min-width: 32px; text-align: center; }
+
+.toggle-row { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 12px; cursor: pointer; }
+.toggle { width: 36px; height: 20px; border-radius: 10px; background: #ccc; position: relative; flex-shrink: 0; transition: background 0.2s; }
+.toggle.on { background: #555; }
+.toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: left 0.2s; }
+.toggle.on::after { left: 18px; }
+
+.radio-option { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 8px; cursor: pointer; }
+.radio-option.selected { border-color: #333; background: #f8f8f8; }
+.radio-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.radio-option.selected .radio-dot { border-color: #333; }
+.radio-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: transparent; }
+.radio-option.selected .radio-dot::after { background: #333; }
+
+.qr-placeholder { width: 120px; height: 120px; border: 2px solid #333; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; padding: 8px; margin: 0 auto 16px; }
+.qr-cell { background: #333; }
+.qr-cell.light { background: #fff; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 10px; font-family: monospace; font-weight: bold; }
+.badge-confirmed { background: #e8e8e8; color: #333; border: 1px solid #999; }
+.badge-completed { background: #f0f0f0; color: #888; border: 1px solid #ccc; }
+.badge-coming-soon { background: #f0f0f0; color: #999; border: 1px solid #ccc; }
+.badge-skill { background: #f0f0f0; color: #555; border: 1px solid #ccc; font-size: 10px; padding: 1px 6px; }
+.badge-winning { background: #e8e8e8; color: #333; border: 1px solid #999; }
+.badge-outbid { background: #f5f0e0; color: #b8860b; border: 1px solid #b8860b; }
+
+.price-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; font-family: monospace; color: #333; }
+.price-row.total { border-top: 2px solid #333; border-bottom: none; font-weight: bold; font-size: 15px; margin-top: 4px; }
+
+.tab-bar { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 14px; }
+.tab-btn { flex: 1; padding: 10px; text-align: center; cursor: pointer; background: none; border: none; font-family: monospace; font-size: 13px; color: #888; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.tab-btn.active { color: #333; border-bottom-color: #333; font-weight: bold; }
+
+.otp-row { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+.otp-input { width: 52px; height: 56px; border: 2px solid #ccc; border-radius: 4px; text-align: center; font-size: 24px; font-family: monospace; color: #333; }
+.otp-input:focus { outline: none; border-color: #333; }
+
+.booking-card { border: 1px solid #ccc; border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+.booking-card-row { display: flex; justify-content: space-between; align-items: center; }
+
+.court-card { border: 1px solid #ccc; border-radius: 4px; padding: 14px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.court-card:hover { background: #f8f8f8; }
+.avail-count { font-size: 12px; font-family: monospace; color: #666; }
+
+.package-card { border: 1px solid #ccc; border-radius: 4px; padding: 14px; margin-bottom: 12px; }
+
+.profile-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #e0e0e0; cursor: pointer; }
+.profile-item:hover { background: #f8f8f8; margin: 0 -16px; padding: 14px 16px; }
+.profile-item:last-child { border-bottom: none; }
+
+.section-label { font-size: 11px; font-family: monospace; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; margin-top: 14px; }
+
+.splash-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 40px 32px; background: #fff; }
+.bounce-logo { border: 3px solid #333; padding: 20px 40px; border-radius: 4px; font-size: 28px; font-weight: bold; font-family: monospace; color: #333; letter-spacing: 4px; }
+.tagline { font-size: 14px; font-family: monospace; color: #888; }
+
+.summary-card { border: 2px solid #333; border-radius: 4px; padding: 14px; margin-bottom: 14px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 13px; font-family: monospace; color: #333; padding: 3px 0; }
+.summary-row .label { color: #888; }
+
+.big-amount { font-size: 32px; font-weight: bold; font-family: monospace; color: #333; text-align: center; padding: 16px 0; }
+.confirm-check { width: 72px; height: 72px; border: 3px solid #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 16px; }
+
+.chip { display: inline-block; padding: 4px 10px; border: 1px solid #ccc; border-radius: 20px; font-size: 11px; font-family: monospace; color: #555; cursor: pointer; margin: 3px; }
+.chip.selected { background: #333; color: #fff; border-color: #333; }
+
+.player-card { border: 1px solid #ccc; border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+.player-avatar { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #ccc; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-family: monospace; font-weight: bold; font-size: 13px; color: #333; flex-shrink: 0; }
+
+.bid-card { border: 1px solid #ccc; border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+
+/* ── Admin App (adm- prefixed) ── */
+.adm-shell { display: flex; height: 100%; background: #fff; }
+.adm-sidebar { width: 200px; flex-shrink: 0; background: #f0f0f0; border-right: 1px solid #ccc; display: flex; flex-direction: column; }
+.adm-sidebar-logo { padding: 16px 14px; border-bottom: 1px solid #ccc; }
+.adm-logo-box { display: inline-block; border: 2px solid #333; padding: 4px 10px; font-family: monospace; font-weight: 900; font-size: 15px; letter-spacing: 3px; color: #333; }
+.adm-logo-sub { font-family: monospace; font-size: 10px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.adm-sidebar-nav { flex: 1; padding: 8px 0; }
+.adm-nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 13px; color: #555; cursor: pointer; border-left: 2px solid transparent; background: transparent; width: 100%; text-align: left; border-top: none; border-right: none; border-bottom: none; font-family: system-ui, sans-serif; }
+.adm-nav-item:hover { background: #e8e8e8; color: #333; }
+.adm-nav-item.active { background: #e0e0e0; color: #333; font-weight: bold; border-left-color: #333; }
+.adm-nav-item .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+.adm-sidebar-footer { padding: 12px 14px; border-top: 1px solid #ccc; font-size: 11px; font-family: monospace; color: #888; }
+.adm-sidebar-footer strong { display: block; color: #333; font-size: 12px; margin-bottom: 2px; }
+.adm-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.adm-topbar { padding: 10px 20px; border-bottom: 1px solid #ccc; background: #f5f5f5; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.adm-topbar-title { font-size: 15px; font-weight: bold; color: #333; font-family: monospace; }
+.adm-topbar-sub { font-size: 11px; color: #888; font-family: monospace; margin-top: 2px; }
+.adm-topbar-right { display: flex; align-items: center; gap: 12px; }
+.adm-avatar-circle { width: 32px; height: 32px; border: 1px solid #ccc; border-radius: 50%; background: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: monospace; font-weight: bold; color: #333; }
+.adm-topbar-name { font-size: 12px; color: #555; }
+.adm-btn-logout { font-size: 11px; font-family: monospace; border: 1px solid #ccc; background: #fff; color: #555; padding: 4px 10px; cursor: pointer; border-radius: 2px; }
+.adm-btn-logout:hover { background: #f0f0f0; color: #333; }
+.adm-page-content { flex: 1; overflow: auto; padding: 20px; background: #fff; }
+
+.adm-card { border: 1px solid #ccc; border-radius: 4px; background: #fff; padding: 14px; }
+.adm-card-gray { background: #f9f9f9; }
+.adm-btn { border: 1px solid #ccc; background: #fff; color: #333; font-size: 12px; padding: 6px 12px; cursor: pointer; border-radius: 2px; font-family: monospace; }
+.adm-btn:hover { background: #f0f0f0; }
+.adm-btn-dark { background: #333; color: #fff; border-color: #333; }
+.adm-btn-dark:hover { background: #444; }
+.adm-btn-sm { padding: 4px 8px; font-size: 11px; }
+.adm-btn-primary { background: #333; color: #fff; border-color: #333; font-weight: bold; }
+.adm-btn-primary:hover { background: #111; }
+.adm-btn-primary:disabled { background: #aaa; border-color: #aaa; cursor: not-allowed; }
+
+.adm-badge { display: inline-block; font-size: 10px; font-family: monospace; padding: 2px 7px; border-radius: 2px; border: 1px solid #ccc; }
+.adm-badge-confirmed { background: #f0f0f0; border-color: #ccc; color: #333; }
+.adm-badge-cancelled { background: #e8e8e8; border-color: #bbb; color: #888; text-decoration: line-through; }
+.adm-badge-active { background: #e8e8e8; border-color: #aaa; color: #333; }
+.adm-badge-inactive { background: #f5f5f5; border-color: #ddd; color: #aaa; }
+.adm-badge-super { background: #333; color: #fff; border-color: #333; }
+.adm-badge-admin { background: #f0f0f0; border-color: #ccc; color: #333; }
+
+.adm-input-field { width: 100%; border: 1px solid #ccc; padding: 7px 10px; font-size: 13px; color: #333; background: #fff; border-radius: 2px; outline: none; font-family: monospace; }
+.adm-input-field:focus { border-color: #333; }
+.adm-input-field:disabled { background: #f0f0f0; color: #aaa; }
+
+.adm-login-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #f5f5f5; }
+.adm-login-box { background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 28px; width: 320px; }
+.adm-login-logo { text-align: center; margin-bottom: 20px; }
+.adm-login-title { font-family: monospace; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: #333; }
+.adm-error-box { background: #f5f5f5; border: 1px solid #ccc; padding: 8px 12px; font-size: 12px; color: #555; margin-bottom: 12px; font-family: monospace; border-radius: 2px; }
+.adm-pw-wrap { position: relative; }
+.adm-pw-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 10px; font-family: monospace; color: #888; cursor: pointer; background: none; border: none; }
+.adm-login-hint { font-size: 10px; font-family: monospace; color: #aaa; text-align: center; margin-top: 10px; }
+
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 13px; font-family: monospace; font-weight: bold; color: #333; text-transform: uppercase; letter-spacing: 1px; }
+.section-count { font-size: 12px; color: #888; font-family: monospace; }
+
+.lbl { display: block; font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 4px; }
+.select-field { width: 100%; border: 1px solid #ccc; padding: 7px 10px; font-size: 13px; color: #333; background: #fff; border-radius: 2px; outline: none; }
+.textarea-field { width: 100%; border: 1px solid #ccc; padding: 7px 10px; font-size: 13px; color: #333; background: #fff; border-radius: 2px; resize: none; outline: none; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { margin-bottom: 12px; }
+
+.wf-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.wf-table th { text-align: left; font-family: monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; padding: 8px 10px; border-bottom: 1px solid #ccc; background: #f5f5f5; white-space: nowrap; }
+.wf-table td { padding: 9px 10px; border-bottom: 1px solid #eee; vertical-align: middle; color: #333; }
+.wf-table tr:last-child td { border-bottom: none; }
+.wf-table tr:hover td { background: #fafafa; }
+.table-wrap { border: 1px solid #ccc; border-radius: 4px; overflow: hidden; }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal-box { background: #fff; border: 1px solid #ccc; border-radius: 4px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #ccc; background: #f5f5f5; }
+.modal-title { font-family: monospace; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+.modal-close { font-size: 20px; color: #888; cursor: pointer; background: none; border: none; line-height: 1; }
+.modal-close:hover { color: #333; }
+.modal-body { padding: 16px; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-card { border: 1px solid #ccc; border-radius: 4px; padding: 14px; background: #f9f9f9; }
+.stat-icon { font-size: 18px; margin-bottom: 6px; }
+.stat-value { font-size: 20px; font-weight: bold; font-family: monospace; color: #333; margin-bottom: 2px; }
+.stat-label { font-size: 10px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+
+.bar-chart { margin-bottom: 20px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.bar-label { font-size: 11px; color: #555; width: 130px; flex-shrink: 0; }
+.bar-track { flex: 1; background: #e8e8e8; height: 10px; border: 1px solid #ddd; border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; background: #aaa; }
+.bar-count { font-size: 11px; font-family: monospace; color: #333; width: 20px; text-align: right; }
+
+.timeline-wrap { overflow-x: auto; }
+.timeline-grid { display: grid; grid-template-columns: 110px repeat(14, 52px); min-width: 840px; }
+.tl-cell { border: 1px solid #e0e0e0; padding: 3px 4px; font-size: 10px; min-height: 36px; }
+.tl-header { background: #f5f5f5; font-family: monospace; color: #888; font-size: 9px; text-align: center; padding: 4px 2px; }
+.tl-court-label { background: #f0f0f0; font-family: monospace; font-size: 10px; color: #555; display: flex; align-items: center; padding: 4px 6px; }
+.tl-booking { background: #333; color: #fff; border-radius: 2px; padding: 2px 4px; font-size: 9px; overflow: hidden; height: 100%; }
+.tl-booking-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-booking-time { opacity: 0.7; }
+.tl-empty { background: #fafafa; }
+
+.pkg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.pkg-card { border: 1px solid #ccc; border-radius: 4px; padding: 14px; background: #fff; }
+.pkg-card.inactive { background: #f9f9f9; opacity: 0.7; }
+.pkg-name { font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.pkg-desc { font-size: 11px; color: #777; margin-bottom: 8px; line-height: 1.4; }
+.pkg-price { font-family: monospace; font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.pkg-sports { font-size: 10px; color: #aaa; font-family: monospace; margin-bottom: 10px; }
+.pkg-actions { display: flex; gap: 8px; }
+
+.toggle-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+.toggle-track { width: 36px; height: 18px; border: 1px solid #ccc; border-radius: 10px; background: #e0e0e0; position: relative; transition: background 0.15s; }
+.toggle-track.on { background: #333; border-color: #333; }
+.toggle-thumb { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1px solid #ccc; transition: left 0.15s; }
+.toggle-track.on .toggle-thumb { left: 20px; border-color: #888; }
+.toggle-label { font-size: 12px; color: #333; }
+
+.toast { border: 1px solid #ccc; background: #f5f5f5; border-radius: 2px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; font-family: monospace; color: #333; }
+.toast strong { display: block; margin-bottom: 2px; }
+.divider { border: none; border-top: 1px solid #e0e0e0; margin: 12px 0; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-key { font-family: monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; }
+.detail-val { color: #333; font-size: 12px; }
+.sport-switch-banner { background: #fffbf0; border: 1px solid #b8860b; border-radius: 2px; padding: 3px 8px; font-size: 10px; font-family: monospace; color: #7a5c00; margin: 2px 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useEffect, useRef } = React;
+
+// ═══════════════════════════════════════════════════════════
+// MOCK DATA
+// ═══════════════════════════════════════════════════════════
+
+const DATES = Array.from({ length: 7 }, (_, i) => {
+  const d = new Date(2026, 3, 18 + i);
+  const iso = `2026-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return {
+    label: d.toLocaleDateString('en', { weekday: 'short' }),
+    date:  d.getDate(),
+    full:  d.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }),
+    iso,
+  };
+});
+
+const HOURS = Array.from({ length: 14 }, (_, i) => 8 + i);
+const HOURS_STR = Array.from({length:14}, (_,i) => `${String(i+8).padStart(2,'0')}:00`);
+
+const COURTA_PB_SLOTS = {
+  8:'available', 9:'booked', 10:'booked', 11:'available', 12:'available',
+  13:'booked', 14:'available', 15:'booked', 16:'available', 17:'booked',
+  18:'available', 19:'available', 20:'available', 21:'available',
+};
+const COURTB_SLOTS = {};
+HOURS.forEach(h => { COURTB_SLOTS[h] = [11,15].includes(h) ? 'booked' : 'available'; });
+const FIELD_SLOTS = {};
+HOURS.forEach(h => { FIELD_SLOTS[h] = [10,14,16].includes(h) ? 'booked' : 'available'; });
+const KIDS_SLOTS = {};
+HOURS.forEach(h => { KIDS_SLOTS[h] = [10,14,17].includes(h) ? 'booked' : 'available'; });
+
+const MOCK_PLAYERS = [
+  { id:1, initials:'KP', name:'Kasun Perera',     skillLevel:'Intermediate', sports:['Pickleball','Badminton'], days:['Mon','Wed','Fri'],  phone:'+94 77 123 4567', playDates:4, joined:'2025-01-10', status:'Active'   },
+  { id:2, initials:'NF', name:'Nimali Fernando',  skillLevel:'Beginner',     sports:['Badminton'],              days:['Tue','Thu','Sat'],  phone:'+94 71 234 5678', playDates:2, joined:'2025-02-14', status:'Active'   },
+  { id:3, initials:'RS', name:'Roshan Silva',     skillLevel:'Advanced',     sports:['Pickleball','Cricket'],   days:['Mon','Sat','Sun'],  phone:'+94 76 345 6789', playDates:7, joined:'2024-11-05', status:'Active'   },
+  { id:4, initials:'DP', name:'Dilani Perera',    skillLevel:'Intermediate', sports:['Badminton','Pickleball'], days:['Wed','Fri','Sun'],  phone:'+94 78 456 7890', playDates:1, joined:'2025-03-20', status:'Active'   },
+  { id:5, initials:'AG', name:'Amal Gunaratne',   skillLevel:'Beginner',     sports:['Cricket','Futsal'],       days:['Mon','Tue','Wed'],  phone:'+94 71 789 0123', playDates:3, joined:'2025-01-28', status:'Active'   },
+  { id:6, initials:'PM', name:'Priya Mendis',     skillLevel:'Intermediate', sports:['Pickleball'],             days:['Thu','Fri','Sat'],  phone:'+94 76 890 1234', playDates:5, joined:'2024-12-03', status:'Inactive' },
+];
+
+const MATCH_REQUESTS_INIT = [
+  { id:'MR-001', dir:'in',  player:'Kasun Perera',    initials:'KP', sport:'Pickleball', skillLevel:'Intermediate', dates:['Apr 22','Apr 23','Apr 25'], status:'pending' },
+  { id:'MR-002', dir:'in',  player:'Nimali Fernando', initials:'NF', sport:'Badminton',  skillLevel:'Beginner',     dates:['Apr 24','Apr 26','Apr 27'], status:'pending' },
+  { id:'MR-003', dir:'out', player:'Roshan Silva',    initials:'RS', sport:'Pickleball', skillLevel:'Advanced',     dates:['Apr 22','Apr 23','Apr 24'], status:'pending' },
+];
+
+const RECURRING_CONFLICTS = { 2: [12] };
+
+const SPORTS = ['Badminton','Pickleball','Cricket','Futsal','Kids Play Area'];
+const COURTS = {
+  Badminton:        ['Court A','Court B'],
+  Pickleball:       ['Court A','Court B'],
+  Cricket:          ['Field'],
+  Futsal:           ['Field'],
+  'Kids Play Area': ['Kids Zone'],
+};
+const SPORT_EMOJIS = { Badminton:'🏸', Pickleball:'🏓', Cricket:'🏏', Futsal:'⚽', 'Kids Play Area':'🧒' };
+
+const PACKAGES_INIT = [
+  { id:1, icon:'🎯', name:'Sports + Kids Combo',   desc:'50% off Kids Zone when booked with any court',         displayPrice:'LKR 3,750 (was LKR 4,500)', price:3750, sports:['Pickleball','Badminton','Cricket','Futsal','Kids Play Area'], cta:'Book Now',    active:true  },
+  { id:2, icon:'🌅', name:'Off-Peak Special',       desc:'30% off bookings before 12:00 PM',                     displayPrice:'From LKR 2,100/hr',          price:2100, sports:['Pickleball','Badminton','Cricket','Futsal'],                 cta:'Book Now',    active:true  },
+  { id:3, icon:'💆', name:'Recovery Bundle',        desc:'Any 2hr+ court booking + Recovery Area included',      displayPrice:'LKR 4,000 flat',             price:4000, sports:['Pickleball','Badminton','Cricket','Futsal'],                 cta:'Book Now',    active:true  },
+  { id:4, icon:'🧒', name:'Kids Zone — Standalone', desc:'Full Kids Zone session, no court required. Ages 3–12', displayPrice:'LKR 1,500/hr \xb7 Ages 3–12', price:1500, sports:['Kids Play Area'],                                    cta:'Book Now',    active:true  },
+  { id:5, icon:'📦', name:'Bulk 5+1 Free',          desc:'Book 5 sessions, get the 6th free',                    displayPrice:'Contact us',                 price:0,    sports:['Pickleball','Badminton'],                                    cta:'Coming Soon', active:false },
+];
+
+const ADMINS_INIT = [
+  { id:'ADM-001', name:'Kasun Perera',       email:'admin@bounce.com',  role:'Super Admin', joined:'2024-01-10', status:'Active'   },
+  { id:'ADM-002', name:'Nimali Fernando',    email:'nimali@bounce.lk',  role:'Manager',     joined:'2024-03-05', status:'Active'   },
+  { id:'ADM-003', name:'Roshan Silva',       email:'roshan@bounce.lk',  role:'Staff',       joined:'2024-06-18', status:'Active'   },
+  { id:'ADM-004', name:'Dilani Jayawardena', email:'dilani@bounce.lk',  role:'Staff',       joined:'2025-01-22', status:'Inactive' },
+];
+
+const BOOKINGS_INIT = [
+  { id:'BNC-001', customer:'Kasun Perera',            phone:'+94 77 123 4567', sport:'Pickleball',    court:'Court A',   date:'2026-04-20', start:'08:00', end:'09:00', players:4,  pkg:'Off-Peak Offer',    status:'Confirmed', notes:'' },
+  { id:'BNC-002', customer:'Nimali Fernando',         phone:'+94 71 234 5678', sport:'Badminton',     court:'Court B',   date:'2026-04-20', start:'09:00', end:'10:00', players:2,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-003', customer:'Roshan Silva',            phone:'+94 76 345 6789', sport:'Cricket',       court:'Field',     date:'2026-04-20', start:'10:00', end:'12:00', players:6,  pkg:'None',               status:'Confirmed', notes:'Net practice' },
+  { id:'BNC-004', customer:'Dilani Jayawardena',      phone:'+94 78 456 7890', sport:'Badminton',     court:'Court A',   date:'2026-04-20', start:'09:00', end:'10:00', players:2,  pkg:'Sports + Kids Combo',status:'Confirmed', notes:'' },
+  { id:'BNC-005', customer:'Tharindu Wickramasinghe', phone:'+94 70 567 8901', sport:'Pickleball',    court:'Court B',   date:'2026-04-20', start:'12:00', end:'13:00', players:4,  pkg:'None',               status:'Cancelled', notes:'' },
+  { id:'BNC-006', customer:'Sachini Bandara',         phone:'+94 77 678 9012', sport:'Kids Play Area',court:'Kids Zone', date:'2026-04-20', start:'13:00', end:'14:00', players:3,  pkg:'Family Bundle',      status:'Confirmed', notes:'3 kids ages 5-8' },
+  { id:'BNC-007', customer:'Amal Gunaratne',          phone:'+94 71 789 0123', sport:'Pickleball',    court:'Court A',   date:'2026-04-20', start:'14:00', end:'15:00', players:4,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-008', customer:'Priya Mendis',            phone:'+94 76 890 1234', sport:'Badminton',     court:'Court B',   date:'2026-04-20', start:'15:00', end:'16:00', players:2,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-009', customer:'Lalith Rajapaksa',        phone:'+94 78 901 2345', sport:'Cricket',       court:'Field',     date:'2026-04-20', start:'16:00', end:'18:00', players:8,  pkg:'Bulk 5+1 Free',      status:'Confirmed', notes:'' },
+  { id:'BNC-010', customer:'Sandya Kumari',           phone:'+94 70 012 3456', sport:'Badminton',     court:'Court A',   date:'2026-04-20', start:'16:00', end:'17:00', players:4,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-011', customer:'Harsha De Silva',         phone:'+94 77 111 2222', sport:'Pickleball',    court:'Court A',   date:'2026-04-20', start:'17:00', end:'18:00', players:2,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-012', customer:'Manori Senanayake',       phone:'+94 71 222 3333', sport:'Kids Play Area',court:'Kids Zone', date:'2026-04-20', start:'10:00', end:'11:00', players:2,  pkg:'Sports + Kids Combo',status:'Confirmed', notes:'' },
+  { id:'BNC-013', customer:'Buddhika Ranasinghe',     phone:'+94 76 333 4444', sport:'Badminton',     court:'Court A',   date:'2026-04-21', start:'09:00', end:'10:00', players:4,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-014', customer:'Chatura Jayasuriya',      phone:'+94 78 444 5555', sport:'Pickleball',    court:'Court A',   date:'2026-04-21', start:'11:00', end:'12:00', players:2,  pkg:'Off-Peak Offer',     status:'Confirmed', notes:'' },
+  { id:'BNC-015', customer:'Rashmi Alwis',            phone:'+94 70 555 6666', sport:'Cricket',       court:'Field',     date:'2026-04-19', start:'14:00', end:'16:00', players:10, pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-016', customer:'Nimal Dissanayake',       phone:'+94 77 444 5566', sport:'Futsal',        court:'Field',     date:'2026-04-20', start:'12:00', end:'14:00', players:10, pkg:'None',               status:'Confirmed', notes:'5-a-side match' },
+  { id:'BNC-017', customer:'Chamara Jayasinghe',      phone:'+94 71 556 7788', sport:'Pickleball',    court:'Court B',   date:'2026-04-20', start:'14:00', end:'16:00', players:4,  pkg:'None',               status:'Confirmed', notes:'' },
+  { id:'BNC-018', customer:'Thilanka Perera',         phone:'+94 76 667 8899', sport:'Badminton',     court:'Court B',   date:'2026-04-20', start:'16:00', end:'17:00', players:2,  pkg:'None',               status:'Confirmed', notes:'' },
+];
+
+const MOCK_BIDS = [
+  { id:'BID-001', court:'Court A', date:'2026-04-20', hour:18, sport:'Pickleball', bidder:'Amal Gunaratne', phone:'+94 71 789 0123', amount:4000, placed:'17:32', status:'Active'  },
+  { id:'BID-002', court:'Court A', date:'2026-04-20', hour:18, sport:'Pickleball', bidder:'Priya Mendis',   phone:'+94 76 890 1234', amount:3500, placed:'17:18', status:'Outbid'  },
+  { id:'BID-003', court:'Court A', date:'2026-04-20', hour:19, sport:'Pickleball', bidder:'Sandya Kumari',  phone:'+94 70 012 3456', amount:3500, placed:'16:55', status:'Active'  },
+];
+
+const MOCK_RECOVERY = [
+  { id:'REC-001', date:'2026-04-20', time:'10:00–12:00', bookingId:'BNC-003', customer:'Lahiru Jayasinghe',  linkedCourt:'Field',   players:6,  status:'Confirmed' },
+  { id:'REC-002', date:'2026-04-20', time:'12:00–14:00', bookingId:'BNC-016', customer:'Priya Mendis',       linkedCourt:'Field',   players:10, status:'Confirmed' },
+  { id:'REC-003', date:'2026-04-21', time:'14:00–16:00', bookingId:'BNC-009', customer:'Saman Kumara',       linkedCourt:'Field',   players:8,  status:'Confirmed' },
+  { id:'REC-004', date:'2026-04-20', time:'14:00–16:00', bookingId:'BNC-017', customer:'Nimali Fernando',    linkedCourt:'Court B', players:4,  status:'Available' },
+];
+
+const HOTSPOT_CONFIG_INIT = [
+  { court:'Court A', date:'2026-04-20', hour:18, floor:3000, isHotspot:true  },
+  { court:'Court A', date:'2026-04-20', hour:19, floor:3000, isHotspot:true  },
+  { court:'Court A', date:'2026-04-20', hour:20, floor:3000, isHotspot:true  },
+  { court:'Court B', date:'2026-04-20', hour:18, floor:3000, isHotspot:false },
+];
+
+const EQUIPMENT_CONFIG_INIT = {
+  pickleball: [
+    { id:'paddle', name:'Paddle Set (\xd72)', price:300 },
+    { id:'ball',   name:'Ball Pack',           price:200 },
+  ],
+  badminton: [
+    { id:'racket',  name:'Racket Pair',        price:300 },
+    { id:'shuttle', name:'Shuttlecock Pack',   price:200 },
+  ],
+  cricket: [
+    { id:'bat',    name:'Bat',                 price:400 },
+    { id:'ball',   name:'Ball',                price:200 },
+    { id:'pads',   name:'Batting Pads',        price:300 },
+    { id:'gloves', name:'Gloves',              price:200 },
+  ],
+  futsal: [
+    { id:'ball', name:'Football',              price:300 },
+    { id:'bibs', name:'Bibs / Vests',          price:200 },
+  ],
+};
+
+// Set-based equipment config for customer booking summary
+const EQUIPMENT_SETS_CONFIG = {
+  pickleball: { setName:'2× Paddles & Ball',        pricePerSet:500, maxSets:2 },
+  badminton:  { setName:'2× Rackets & Shuttlecock', pricePerSet:500, maxSets:2 },
+  cricket:    { setName:'2× Bats & Ball',            pricePerSet:600, maxSets:1 },
+  futsal:     { setName:'Football & Bibs',           pricePerSet:300, maxSets:1 },
+};
+
+const RECOVERY_RATE_PER_HEAD = 500;
+
+const SCREENS = [
+  { id:'splash',        label:'Splash',          flow:'main'    },
+  { id:'login',         label:'Login',            flow:'main'    },
+  { id:'register',      label:'Register',         flow:'main'    },
+  { id:'profilesetup',  label:'Profile Setup',    flow:'main'    },
+  { id:'onboarding',    label:'Onboarding',       flow:'main'    },
+  { id:'home',          label:'Home',             flow:'main'    },
+  { id:'court',         label:'Court Select',     flow:'booking' },
+  { id:'slots',         label:'Slot Select',      flow:'booking' },
+  { id:'summary',       label:'Book Summary',     flow:'booking' },
+  { id:'cart',          label:'Cart',             flow:'booking' },
+  { id:'payment',       label:'Payment',          flow:'booking' },
+  { id:'confirm',       label:'Confirmation',     flow:'booking' },
+  { id:'kids',          label:'Kids Zone',        flow:'kids'    },
+  { id:'recovery',      label:'Recovery Area',    flow:'nav'     },
+  { id:'matchhub',      label:'Match Hub',        flow:'match'   },
+  { id:'playerfind',    label:'Find Player',      flow:'match'   },
+  { id:'matchrequests', label:'Match Requests',   flow:'match'   },
+  { id:'playdates',     label:'Play Dates',       flow:'match'   },
+  { id:'mybookings',    label:'My Bookings',      flow:'nav'     },
+  { id:'mybids',        label:'My Bids',          flow:'bid'     },
+  { id:'bidflow',       label:'Bid Flow',         flow:'bid'     },
+  { id:'bidconfirm',    label:'Bid Confirm',      flow:'bid'     },
+  { id:'packages',      label:'Packages',         flow:'nav'     },
+  { id:'tournaments',   label:'Tournaments',      flow:'nav'     },
+  { id:'profile',       label:'Profile',          flow:'nav'     },
+];
+
+const SCREEN_FEATURES = {
+  splash:        { name:'Splash Screen',       features:['App branding and first-time launch','Entry point to login or registration'] },
+  login:         { name:'Login',               features:['Email + password authentication','Link to registration','Guest skip option'] },
+  register:      { name:'Registration',        features:['Name, email, phone, password fields','Leads to Player Profile Setup'] },
+  profilesetup:  { name:'Player Profile Setup',features:['Display name, skill level, preferred sports','Availability day chips','Navigates to Onboarding on save'] },
+  onboarding:    { name:'Onboarding',          features:['3-step card walkthrough','Progress dots indicator','Step 1: Welcome — platform intro','Step 2: Book a Court — slot flow','Step 3: Combo Booking — add-ons','Skip link navigates to home'] },
+  home:          { name:'Home',                features:['Sport grid: Pickleball, Badminton, Cricket, Futsal, Kids Zone','All sports skip court selection (auto-assigned)','Upcoming booking preview','Tournaments banner'] },
+  court:         { name:'Court Selection',     features:['Not in standard flow (Change 4)','Court A and Court B cards','7-day date picker'] },
+  slots:         { name:'Slot Selection',      features:['Available, Booked, Hotspot states','Hotspot slots from live admin config','Recurring weekly toggle (4 weeks)','Multi-select hours'] },
+  summary:       { name:'Booking Summary',     features:['Sport-aware player count (cricket max 22, futsal max 10, others max 4)','Recovery Area unlock: 2+ slots + 2+ players — LKR 500/person, auto-scheduled after court','Equipment as bundled sets with stepper (up to 2 sets for PB/BD)','Kids Zone add-on: LKR 750/kid/hr matches court duration'] },
+  cart:          { name:'Cart',                features:['All bookings before payment','Remove items','Book Another'] },
+  payment:       { name:'Payment',             features:['Credit/Debit card form','Booking mini-summary'] },
+  confirm:       { name:'Confirmation',        features:['Booking ID BNC-YYYY-NNN','QR code placeholder','Pushes to admin shared bookings'] },
+  kids:          { name:'Kids Zone',           features:['Standalone Kids Zone LKR 1,500/hr','1–4 kids stepper','Combo upsell card'] },
+  recovery:      { name:'Recovery Area',       features:['Standalone booking: select hours + people (2–8)','LKR 500/person — calculated per head','Multi-slot selection, each slot 1hr','Also auto-added as add-on during court checkout (2+ slots)'] },
+  matchhub:      { name:'Match Hub',           features:['Find a Player and My Requests cards','Active Play Date banner'] },
+  playerfind:    { name:'Find a Player',       features:['Filter by Sport and Skill Level','Request Match creates pending request'] },
+  matchrequests: { name:'Match Requests',      features:['Received / Sent tabs','Accept creates Play Date entry'] },
+  playdates:     { name:'Play Dates',          features:['Confirmed play sessions list','Kids Auto-Added badge'] },
+  mybookings:    { name:'My Bookings',         features:['Upcoming and Past tabs','Cancel upcoming bookings'] },
+  mybids:        { name:'My Bids',             features:['Reads from shared bids state','Winning / Outbid status','Raise Bid action'] },
+  bidflow:       { name:'Bid Flow',            features:['Hotspot slot bid stepper','LKR 500 increments','Place Bid pushes to shared bids'] },
+  bidconfirm:    { name:'Bid Confirmation',    features:['Bid reference number','Notify if outbid'] },
+  packages:      { name:'Packages & Offers',   features:['Reads active packages from admin state','5 packages: Combo, Off-Peak, Recovery, Kids, Bulk'] },
+  tournaments:   { name:'Tournaments',         features:['Upcoming tournament discovery','Register (disabled)'] },
+  profile:       { name:'Profile',             features:['Skill level badge and sport icons','How to Use the App link','Edit Profile'] },
+};
+
+// ═══════════════════════════════════════════════════════════
+// SHARED COMPONENTS
+// ═══════════════════════════════════════════════════════════
+
+function JourneyTracker({ history, current, onNavigate }) {
+  const visited = new Set(history);
+  return (
+    <div className="journey-tracker">
+      <h3>Journey</h3>
+      {SCREENS.map(s => {
+        const isVisited = visited.has(s.id);
+        const isCurrent = s.id === current;
+        return (
+          <div key={s.id} className={`journey-item ${isCurrent?'current':isVisited?'visited':''}`}
+            onClick={() => isVisited && !isCurrent && onNavigate(s.id)}>
+            <div className="dot" />
+            <span className="journey-label">{s.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FeaturesPanel({ screen }) {
+  const info = SCREEN_FEATURES[screen] || { name:screen, features:[] };
+  return (
+    <div className="features-panel">
+      <h3>Screen Features</h3>
+      <div className="screen-name">{info.name}</div>
+      <ul>{info.features.map((f,i) => <li key={i}>{f}</li>)}</ul>
+    </div>
+  );
+}
+
+function BottomNav({ active, navigate }) {
+  const tabs = [
+    { id:'home',       icon:'🏠', label:'Home'     },
+    { id:'mybookings', icon:'📅', label:'Bookings' },
+    { id:'matchhub',   icon:'🤝', label:'Match'    },
+    { id:'packages',   icon:'🎁', label:'Packages' },
+    { id:'profile',    icon:'👤', label:'Profile'  },
+  ];
+  return (
+    <div className="bottom-nav">
+      {tabs.map(t => (
+        <button key={t.id} className={`nav-tab ${active===t.id?'active':''}`} onClick={() => navigate(t.id)}>
+          <span className="nav-icon">{t.icon}</span>{t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DatePicker({ selected, onSelect }) {
+  return (
+    <div className="date-picker">
+      {DATES.map((d,i) => (
+        <div key={i} className={`date-chip ${selected===i?'selected':''}`} onClick={() => onSelect(i)}>
+          <span className="dc-day">{d.label}</span>
+          <span className="dc-date">{d.date}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SlotGrid({ slots, selectedSlots=[], onToggle, onSelect, onHotspot, multiSelect=true }) {
+  return (
+    <div className="slot-grid">
+      {HOURS.map(h => {
+        const state = slots[h] || 'available';
+        const isSelected = multiSelect && selectedSlots.includes(h);
+        const isHotspot = state === 'hotspot';
+        return (
+          <button key={h}
+            className={`slot-btn ${isHotspot?'hotspot':state} ${isSelected?'selected':''}`}
+            disabled={state==='booked'}
+            onClick={() => {
+              if (state==='booked') return;
+              if (isHotspot) { onHotspot && onHotspot(h); return; }
+              if (multiSelect) onToggle && onToggle(h);
+              else onSelect && onSelect(h);
+            }}
+          >
+            <span style={{fontSize:9}}>{h}:00</span>
+            <span style={{fontSize:8}}>–{h+1}:00</span>
+            {state==='booked' && <span style={{fontSize:7}}>Booked</span>}
+            {isHotspot && <span style={{fontSize:9}}>🔥</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function QRPlaceholder() {
+  const pattern = [1,0,1,1,0,1,0,1,0,0,1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,1,1];
+  return (
+    <div className="qr-placeholder">
+      {pattern.map((v,i) => <div key={i} className={`qr-cell ${v?'':'light'}`} />)}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// CUSTOMER SCREENS
+// ═══════════════════════════════════════════════════════════
+
+function SplashScreen({ navigate }) {
+  return (
+    <div className="splash-screen">
+      <div className="bounce-logo">BOUNCE</div>
+      <div className="tagline">Book. Play. Bounce.</div>
+      <div style={{width:'100%',height:80,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div className="img-placeholder" style={{width:120,height:80,borderRadius:4}}><span>Courts</span></div>
+      </div>
+      <button className="btn-primary" onClick={() => navigate('login')}>Get Started</button>
+    </div>
+  );
+}
+
+function LoginScreen({ navigate }) {
+  const [showPw, setShowPw] = useState(false);
+  return (
+    <div className="screen">
+      <div className="screen-body" style={{display:'flex',flexDirection:'column',justifyContent:'center',flex:1}}>
+        <div style={{marginBottom:32,textAlign:'center'}}>
+          <div style={{fontSize:22,fontFamily:'monospace',fontWeight:'bold',color:'#333',marginBottom:6}}>Welcome back</div>
+          <div style={{fontSize:13,color:'#888',fontFamily:'monospace'}}>Login to your Bounce account</div>
+        </div>
+        <div className="section-label">Email</div>
+        <input className="input-field" style={{marginBottom:12}} placeholder="you@example.com" defaultValue="dusara@example.com" />
+        <div className="section-label">Password</div>
+        <div style={{display:'flex',gap:0,marginBottom:20}}>
+          <input className="input-field" type={showPw?'text':'password'} defaultValue="password" style={{borderRadius:'4px 0 0 4px',flex:1}} />
+          <button onClick={() => setShowPw(!showPw)} style={{padding:'0 12px',border:'1px solid #ccc',borderLeft:'none',borderRadius:'0 4px 4px 0',background:'#f0f0f0',cursor:'pointer',fontFamily:'monospace',fontSize:12,color:'#555'}}>
+            {showPw?'Hide':'Show'}
+          </button>
+        </div>
+        <button className="btn-primary" style={{marginBottom:12}} onClick={() => navigate('home')}>Login</button>
+        <div style={{textAlign:'center',marginBottom:8}}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>Don't have an account? </span>
+          <button className="link-btn" onClick={() => navigate('register')}>Register</button>
+        </div>
+        <div style={{textAlign:'center'}}>
+          <button className="link-btn" onClick={() => navigate('home')}>Skip for now</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegistrationScreen({ navigate }) {
+  const [showPw, setShowPw] = useState(false);
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('login')}>←</button>
+        <span className="screen-title">Create Account</span>
+      </div>
+      <div className="screen-body">
+        <div className="section-label">Full Name</div>
+        <input className="input-field" style={{marginBottom:12}} defaultValue="Dusara Abeysinghe" />
+        <div className="section-label">Email</div>
+        <input className="input-field" style={{marginBottom:12}} defaultValue="dusara@example.com" />
+        <div className="section-label">Phone Number</div>
+        <div className="input-group" style={{marginBottom:12}}>
+          <div className="input-prefix">🇱🇰 +94</div>
+          <input className="input-field" defaultValue="77 123 4567" />
+        </div>
+        <div className="section-label">Password</div>
+        <div style={{display:'flex',gap:0,marginBottom:20}}>
+          <input className="input-field" type={showPw?'text':'password'} defaultValue="password" style={{borderRadius:'4px 0 0 4px',flex:1}} />
+          <button onClick={() => setShowPw(!showPw)} style={{padding:'0 12px',border:'1px solid #ccc',borderLeft:'none',borderRadius:'0 4px 4px 0',background:'#f0f0f0',cursor:'pointer',fontFamily:'monospace',fontSize:12,color:'#555'}}>
+            {showPw?'Hide':'Show'}
+          </button>
+        </div>
+        <button className="btn-primary" style={{marginBottom:12}} onClick={() => navigate('profilesetup')}>Create Account</button>
+        <div style={{textAlign:'center'}}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>Already have an account? </span>
+          <button className="link-btn" onClick={() => navigate('login')}>Login</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileSetupScreen({ navigate, playerProfile, setPlayerProfile }) {
+  const [name, setName] = useState(playerProfile.name || 'Dusara');
+  const [skill, setSkill] = useState(playerProfile.skillLevel || 'Intermediate');
+  const [sports, setSports] = useState(playerProfile.sports || ['Pickleball']);
+  const [avail, setAvail] = useState(playerProfile.availability || ['Sat','Sun']);
+  const allSports = ['Pickleball','Badminton','Cricket','Futsal'];
+  const allDays   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const skills    = ['Beginner','Intermediate','Advanced'];
+  const toggleSport = s => setSports(prev => prev.includes(s)?prev.filter(x=>x!==s):[...prev,s]);
+  const toggleDay   = d => setAvail(prev => prev.includes(d)?prev.filter(x=>x!==d):[...prev,d]);
+  const save = () => {
+    setPlayerProfile({ name, skillLevel:skill, sports, availability:avail });
+    navigate('onboarding');
+  };
+  return (
+    <div className="screen">
+      <div className="screen-header"><span className="screen-title">Player Profile</span></div>
+      <div className="screen-body">
+        <div style={{textAlign:'center',marginBottom:20}}>
+          <div style={{fontSize:13,fontFamily:'monospace',color:'#888'}}>Tell us about yourself to find the best matches</div>
+        </div>
+        <div className="section-label">Display Name</div>
+        <input className="input-field" value={name} onChange={e=>setName(e.target.value)} style={{marginBottom:14}} />
+        <div className="section-label">Skill Level</div>
+        <div style={{display:'flex',gap:8,marginBottom:14}}>
+          {skills.map(s => <div key={s} className={`chip ${skill===s?'selected':''}`} onClick={() => setSkill(s)}>{s}</div>)}
+        </div>
+        <div className="section-label">Preferred Sports</div>
+        <div style={{marginBottom:14}}>
+          {allSports.map(s => <span key={s} className={`chip ${sports.includes(s)?'selected':''}`} onClick={() => toggleSport(s)}>{s}</span>)}
+        </div>
+        <div className="section-label">Availability</div>
+        <div style={{marginBottom:20}}>
+          {allDays.map(d => <span key={d} className={`chip ${avail.includes(d)?'selected':''}`} onClick={() => toggleDay(d)}>{d}</span>)}
+        </div>
+        <button className="btn-primary" onClick={save}>Save &amp; Continue</button>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingScreen({ navigate }) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { title:'Welcome to Bounce 👋', body:'Your all-in-one sports booking platform. Book courts, find players, and manage everything in one place.' },
+    { title:'Book a Court 🏓',      body:'Pick your sport → choose a time slot → add it to your cart. Supports Pickleball, Badminton, Cricket, Futsal, and Kids Zone.' },
+    { title:'Combo Booking 🛒',     body:'Add Kids Zone, Recovery Area, or Equipment directly during court checkout — all in one transaction.' },
+  ];
+  return (
+    <div className="screen">
+      <div style={{display:'flex',justifyContent:'flex-end',padding:'8px 16px 0'}}>
+        <button className="link-btn" onClick={() => navigate('home')}>Skip</button>
+      </div>
+      <div className="screen-body" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1}}>
+        <div style={{display:'flex',gap:6,marginBottom:24}}>
+          {steps.map((_,i) => <div key={i} style={{width:8,height:8,borderRadius:'50%',background:i===step?'#333':'#ccc'}} />)}
+        </div>
+        <div style={{border:'1px solid #ccc',borderRadius:4,padding:20,textAlign:'center',marginBottom:24,width:'100%'}}>
+          <div style={{fontSize:36,marginBottom:12}}>{steps[step].title.split(' ').slice(-1)[0]}</div>
+          <div style={{fontFamily:'monospace',fontSize:14,fontWeight:'bold',color:'#333',marginBottom:10}}>{steps[step].title}</div>
+          <div style={{fontFamily:'monospace',fontSize:12,color:'#666',lineHeight:1.7}}>{steps[step].body}</div>
+        </div>
+        <button className="btn-primary" style={{maxWidth:200}} onClick={() => { if(step<2)setStep(step+1); else navigate('home'); }}>
+          {step<2?'Next →':'Get Started'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HomeScreen({ navigate, setSport, setCourt, cart }) {
+  const sports = [
+    { id:'pickleball', icon:'🏓', name:'Pickleball' },
+    { id:'badminton',  icon:'🏸', name:'Badminton' },
+    { id:'cricket',    icon:'🏏', name:'Cricket' },
+    { id:'futsal',     icon:'⚽', name:'Futsal' },
+  ];
+  const handleSport = s => {
+    setSport(s.id);
+    if (s.id==='cricket'||s.id==='futsal') { setCourt('Field'); navigate('slots'); return; }
+    if (s.id==='pickleball'||s.id==='badminton') { setCourt('Auto-Assigned'); navigate('slots'); return; }
+  };
+  return (
+    <div className="screen">
+      <div className="screen-header" style={{borderBottom:'none',paddingBottom:4,justifyContent:'space-between'}}>
+        <span style={{fontSize:18,fontFamily:'monospace',color:'#333'}}>Hey, Dusara 👋</span>
+        <button onClick={() => navigate('cart')} style={{position:'relative',background:'none',border:'1px solid #ccc',borderRadius:4,padding:'4px 10px',cursor:'pointer',fontSize:18}}>
+          🛒
+          {cart.length>0 && (
+            <span style={{position:'absolute',top:-6,right:-6,background:'#333',color:'#fff',borderRadius:'50%',width:16,height:16,fontSize:9,fontFamily:'monospace',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold'}}>
+              {cart.length}
+            </span>
+          )}
+        </button>
+      </div>
+      <div className="screen-body">
+        <div className="section-label">Book a Sport</div>
+        <div className="sport-grid">
+          {sports.map(s => (
+            <div key={s.id} className="sport-card" onClick={() => handleSport(s)}>
+              <span className="sport-icon">{s.icon}</span>
+              <span className="sport-name">{s.name}</span>
+            </div>
+          ))}
+        </div>
+        <div className="sport-card" style={{marginBottom:10,display:'flex',alignItems:'center',gap:12,padding:'14px 16px',textAlign:'left'}} onClick={() => { setSport('kids'); navigate('kids'); }}>
+          <span style={{fontSize:26}}>🧒</span>
+          <div>
+            <div style={{fontFamily:'monospace',fontSize:12,fontWeight:'bold',color:'#333'}}>Kids Play Zone</div>
+            <div style={{fontFamily:'monospace',fontSize:10,color:'#888'}}>From LKR 750/kid with court</div>
+          </div>
+        </div>
+        <div className="sport-card" style={{marginBottom:14,display:'flex',alignItems:'center',gap:12,padding:'14px 16px',textAlign:'left'}} onClick={() => navigate('recovery')}>
+          <span style={{fontSize:26}}>💆</span>
+          <div>
+            <div style={{fontFamily:'monospace',fontSize:12,fontWeight:'bold',color:'#333'}}>Recovery Area</div>
+            <div style={{fontFamily:'monospace',fontSize:10,color:'#888'}}>From LKR 500/person · Ice bath, stretch & massage</div>
+          </div>
+        </div>
+        <div className="card" style={{background:'#f8f8f8',cursor:'pointer',marginBottom:10}} onClick={() => navigate('tournaments')}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <span style={{fontFamily:'monospace',fontSize:13,color:'#333'}}>🏆 Tournaments</span>
+            <span style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>View →</span>
+          </div>
+          <div style={{fontFamily:'monospace',fontSize:11,color:'#999',marginTop:4}}>Pickleball Open · Apr 26–27 · Badminton League · May 3</div>
+        </div>
+        <div className="section-label">Upcoming Booking</div>
+        <div className="booking-card" style={{cursor:'pointer'}} onClick={() => navigate('mybookings')}>
+          <div className="booking-card-row">
+            <div>
+              <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>🏓 Pickleball · Auto-Assigned</div>
+              <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginTop:4}}>Apr 20 · 10:00 AM – 11:00 AM</div>
+            </div>
+            <span style={{fontSize:18,color:'#888'}}>›</span>
+          </div>
+        </div>
+        <div style={{textAlign:'center',marginTop:4}}>
+          <button className="link-btn" onClick={() => navigate('mybookings')}>View All Bookings</button>
+        </div>
+      </div>
+      <BottomNav active="home" navigate={navigate} />
+    </div>
+  );
+}
+
+function CourtSelectionScreen({ navigate, sport, setCourt }) {
+  const [dateIdx, setDateIdx] = useState(0);
+  const courts = [
+    { id:'Court A', slots: dateIdx===0?3:5 },
+    { id:'Court B', slots: dateIdx===0?5:4 },
+  ];
+  const sportLabel = sport==='pickleball'?'Pickleball':'Badminton';
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <span className="screen-title">{sportLabel} — Select Court</span>
+      </div>
+      <div className="screen-body">
+        <div className="section-label">Select Date</div>
+        <DatePicker selected={dateIdx} onSelect={setDateIdx} />
+        <div className="section-label">Available Courts</div>
+        {courts.map(c => (
+          <div key={c.id} className="court-card" onClick={() => { setCourt(c.id); navigate('slots'); }}>
+            <div>
+              <div style={{fontFamily:'monospace',fontWeight:'bold',color:'#333'}}>{c.id}</div>
+              <div className="avail-count">{c.slots} slots available</div>
+            </div>
+            <span style={{fontSize:18,color:'#888'}}>›</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SlotSelectionScreen({ navigate, sport, court, selectedSlots, setSelectedSlots, setBidSlot, hotspotConfig }) {
+  const [dateIdx, setDateIdx] = useState(0);
+  const [recurring, setRecurring] = useState(false);
+  const isFieldSport = sport==='cricket'||sport==='futsal';
+  const sportLabels = { pickleball:'Pickleball', badminton:'Badminton', cricket:'Cricket', futsal:'Futsal' };
+  const sportLabel = sportLabels[sport] || sport;
+
+  let baseSlots;
+  if (court==='Auto-Assigned'||court==='Court A') baseSlots = COURTA_PB_SLOTS;
+  else if (court==='Court B') baseSlots = COURTB_SLOTS;
+  else if (isFieldSport) baseSlots = FIELD_SLOTS;
+  else baseSlots = KIDS_SLOTS;
+
+  const currentDate = DATES[dateIdx]?.iso || '';
+  const effectiveSlots = { ...baseSlots };
+  (hotspotConfig||[]).forEach(hs => {
+    const matchCourt = court==='Auto-Assigned'?'Court A':court;
+    if (hs.court===matchCourt && hs.date===currentDate && hs.isHotspot) {
+      if (effectiveSlots[hs.hour]==='available') effectiveSlots[hs.hour]='hotspot';
+    }
+  });
+
+  const dateLabel = DATES[dateIdx]?.full||'';
+  const toggleSlot = h => setSelectedSlots(prev => prev.includes(h)?prev.filter(s=>s!==h):[...prev,h].sort((a,b)=>a-b));
+  const handleHotspot = h => {
+    setBidSlot({ hour:h, court, sport, date:dateLabel, currentBid:3500, minIncrement:500 });
+    navigate('bidflow');
+  };
+
+  const baseDate = new Date(2026,3,18+dateIdx);
+  const recurrences = Array.from({length:4},(_,i) => {
+    const d = new Date(baseDate); d.setDate(d.getDate()+(i+1)*7);
+    return { week:i+1, label:d.toLocaleDateString('en',{month:'short',day:'numeric'}), conflicts:selectedSlots.filter(h=>(RECURRING_CONFLICTS[i]||[]).includes(h)) };
+  });
+  const canContinue = selectedSlots.length>0;
+  const hasConflicts = recurring && recurrences.some(r=>r.conflicts.length>0);
+  const displayCourt = court==='Auto-Assigned'?`${sportLabel} — Auto-Assigned`:court;
+
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <div>
+          <div className="screen-title">{displayCourt}</div>
+          <div style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>{dateLabel}</div>
+        </div>
+      </div>
+      <div className="screen-body">
+        <div className="section-label">Select Date</div>
+        <DatePicker selected={dateIdx} onSelect={i => { setDateIdx(i); setSelectedSlots([]); }} />
+        <div className="section-label">Select 1-hour slots (multi-select)</div>
+        <div style={{display:'flex',gap:12,marginBottom:10,fontSize:11,fontFamily:'monospace',color:'#666'}}>
+          <span>○ Available</span>
+          <span style={{color:'#aaa'}}>⬛ Booked</span>
+          <span style={{color:'#b8860b'}}>🔥 Hotspot</span>
+        </div>
+        <SlotGrid slots={effectiveSlots} selectedSlots={selectedSlots} onToggle={toggleSlot} onHotspot={handleHotspot} multiSelect={true} />
+        <div className="section-label" style={{marginTop:14}}>Recurring Booking</div>
+        <div className="toggle-row" onClick={() => setRecurring(!recurring)}>
+          <div className={`toggle ${recurring?'on':''}`} />
+          <div>
+            <div style={{fontFamily:'monospace',fontSize:13,color:'#333'}}>🔁 Repeat weekly</div>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>Books the same slots for the next 4 weeks</div>
+          </div>
+        </div>
+        {recurring && canContinue && (
+          <div style={{border:'1px solid #ccc',borderRadius:4,marginBottom:4,overflow:'hidden'}}>
+            <div style={{padding:'8px 12px',background:'#f0f0f0',borderBottom:'1px solid #e0e0e0',fontFamily:'monospace',fontSize:11,color:'#555',textTransform:'uppercase',letterSpacing:'0.5px'}}>Recurrence Preview</div>
+            {recurrences.map(r => (
+              <div key={r.week} style={{padding:'9px 12px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                <div>
+                  <div style={{fontFamily:'monospace',fontSize:12,color:'#333'}}>Week {r.week} — {r.label}</div>
+                  {r.conflicts.length>0 && <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginTop:2}}>⚠️ Conflict at {r.conflicts.map(h=>`${h}:00`).join(', ')} — will be skipped</div>}
+                </div>
+                <span style={{fontFamily:'monospace',fontSize:11}}>{r.conflicts.length>0?'⚠️ Partial':'✓ Clear'}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {hasConflicts && <div style={{marginTop:8,padding:'8px 10px',background:'#f5f5f5',border:'1px solid #ccc',borderRadius:4,fontFamily:'monospace',fontSize:11,color:'#555'}}>⚠️ Some recurring weeks have conflicts. Those slots will be skipped.</div>}
+        <div style={{marginTop:14}}>
+          <button className="btn-primary" disabled={!canContinue} onClick={() => navigate('summary')}>
+            {canContinue?`Review & Add to Cart — ${selectedSlots.length} slot${selectedSlots.length>1?'s':''}${recurring?' · 4 weeks':''}` : 'Select at least 1 slot'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BookingSummaryScreen({ navigate, sport, court, selectedSlots, playerCount, setPlayerCount, kidsAdded, setKidsAdded, recoveryAdded, setRecoveryAdded, equipSets, setEquipSets, kidsCount, setKidsCount, cart, setCart, setSharedRecovery }) {
+  const sportLabel = { pickleball:'Pickleball', badminton:'Badminton', cricket:'Cricket', futsal:'Futsal' }[sport]||sport;
+  const sorted = [...selectedSlots].sort((a,b)=>a-b);
+  const recoveryUnlocked = sorted.length>=2 && playerCount>=2;
+  const recoverySlot = sorted.length>0 ? sorted[sorted.length-1]+1 : null;
+  const isFieldSport = sport==='cricket'||sport==='futsal';
+  const maxPlayers = sport==='cricket'?22:sport==='futsal'?10:4;
+  const minPlayers = isFieldSport?1:2;
+  const displayCourt = court==='Auto-Assigned'?'Auto-Assigned':court;
+  const equipSet = EQUIPMENT_SETS_CONFIG[sport]||null;
+  const equipTotal = equipSet ? equipSet.pricePerSet * equipSets : 0;
+
+  const courtFee = 3000 * Math.max(sorted.length,1);
+  const kidsFee  = kidsAdded ? 750 * kidsCount * sorted.length : 0;
+  const recFee   = (recoveryAdded&&recoveryUnlocked) ? RECOVERY_RATE_PER_HEAD * Math.min(playerCount,8) : 0;
+  const total    = courtFee + kidsFee + equipTotal + recFee;
+
+  const handleAddToCart = () => {
+    const item = { id:Date.now(), sport, sportLabel, court, date:DATES[0].full, slots:sorted, playerCount,
+      kidsAdded, kidsCount:kidsAdded?kidsCount:0,
+      recoveryAdded:recoveryAdded&&recoveryUnlocked, recoverySlot:recoveryAdded&&recoveryUnlocked?recoverySlot:null,
+      equipSets, equipSetName:equipSet?equipSet.setName:null,
+      subtotal:total };
+    setCart(prev=>[...prev,item]);
+    if (recoveryAdded&&recoveryUnlocked&&setSharedRecovery) {
+      setSharedRecovery(prev=>[...prev,{ id:`REC-${Date.now()}`, date:'2026-04-20', time:`${recoverySlot}:00–${recoverySlot+1}:00`, bookingId:`BNC-${Date.now()}`, customer:'Dusara Abeysinghe', linkedCourt:court==='Auto-Assigned'?'Court A':court, players:playerCount, status:'Confirmed' }]);
+    }
+    setEquipSets(0);
+    setKidsAdded(false);
+    setRecoveryAdded(false);
+    navigate('cart');
+  };
+
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('slots')}>←</button>
+        <span className="screen-title">Booking Summary</span>
+      </div>
+      <div className="screen-body">
+        <div className="summary-card">
+          <div className="summary-row"><span className="label">Sport</span><span>{sportLabel}</span></div>
+          <div className="summary-row"><span className="label">Court</span><span>{displayCourt}</span></div>
+          <div className="summary-row"><span className="label">Date</span><span>{DATES[0].full}</span></div>
+          <div className="summary-row" style={{alignItems:'flex-start'}}>
+            <span className="label" style={{paddingTop:2}}>Slot{sorted.length>1?'s':''} ({sorted.length})</span>
+            <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end'}}>
+              {sorted.length>0?sorted.map(h=><span key={h} style={{fontFamily:'monospace',fontSize:12}}>{h}:00 – {h+1}:00</span>):<span>—</span>}
+            </div>
+          </div>
+        </div>
+
+        <div className="section-label">Players</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6,padding:'10px 12px',border:'1px solid #ccc',borderRadius:4}}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>Number of Players</span>
+          <div className="stepper">
+            <button className="stepper-btn" onClick={() => setPlayerCount(Math.max(minPlayers,playerCount-1))}>−</button>
+            <span className="stepper-val">{playerCount}</span>
+            <button className="stepper-btn" onClick={() => setPlayerCount(Math.min(maxPlayers,playerCount+1))}>+</button>
+          </div>
+        </div>
+        <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:14,textAlign:'right'}}>
+          {isFieldSport?'No fixed limit — enter your team size':'2–4 players'}
+        </div>
+
+        <div className="section-label">Add-ons</div>
+
+        {/* Recovery Area */}
+        <div className="toggle-row" onClick={() => recoveryUnlocked&&setRecoveryAdded(!recoveryAdded)} style={{opacity:recoveryUnlocked?1:0.5,cursor:recoveryUnlocked?'pointer':'default'}}>
+          <div className={`toggle ${recoveryAdded&&recoveryUnlocked?'on':''}`} />
+          <div>
+            <div style={{fontFamily:'monospace',fontSize:13,color:'#333'}}>💆 Recovery Area</div>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>
+              {recoveryUnlocked
+                ? `Auto-scheduled ${recoverySlot}:00–${recoverySlot+1}:00 · LKR 500/person · max 8`
+                : 'Select 2+ slots to unlock Recovery'}
+            </div>
+          </div>
+        </div>
+
+        {/* Kids Play Zone toggle + inline kids count */}
+        <div className="toggle-row" onClick={() => setKidsAdded(!kidsAdded)}>
+          <div className={`toggle ${kidsAdded?'on':''}`} />
+          <div style={{flex:1}}>
+            <div style={{fontFamily:'monospace',fontSize:13,color:'#333'}}>➕ Kids Play Zone</div>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>
+              {kidsAdded
+                ? `${kidsCount} kid${kidsCount>1?'s':''} · ${sorted.length} hr${sorted.length>1?'s':''} · LKR ${kidsFee.toLocaleString()}`
+                : '50% off — LKR 750/kid/hr (was LKR 1,500)'}
+            </div>
+          </div>
+        </div>
+        {kidsAdded && (
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px 12px 20px',borderLeft:'3px solid #e0e0e0',marginBottom:4,marginLeft:6}}>
+            <span style={{fontFamily:'monospace',fontSize:12,color:'#888'}}>Number of Kids</span>
+            <div className="stepper">
+              <button className="stepper-btn" onClick={e=>{e.stopPropagation();setKidsCount(Math.max(1,kidsCount-1))}}>−</button>
+              <span className="stepper-val">{kidsCount}</span>
+              <button className="stepper-btn" onClick={e=>{e.stopPropagation();setKidsCount(Math.min(4,kidsCount+1))}}>+</button>
+            </div>
+          </div>
+        )}
+
+        {/* Equipment — set-based stepper */}
+        {equipSet && (
+          <>
+            <div className="section-label">Equipment</div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px',border:'1px solid #ccc',borderRadius:4,marginBottom:12}}>
+              <div>
+                <div style={{fontFamily:'monospace',fontSize:13,color:'#333'}}>🎒 {equipSet.setName}</div>
+                <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginTop:2}}>
+                  LKR {equipSet.pricePerSet.toLocaleString()}/set · max {equipSet.maxSets} set{equipSet.maxSets>1?'s':''}
+                </div>
+              </div>
+              <div className="stepper">
+                <button className="stepper-btn" onClick={() => setEquipSets(Math.max(0,equipSets-1))}>−</button>
+                <span className="stepper-val">{equipSets}</span>
+                <button className="stepper-btn" onClick={() => setEquipSets(Math.min(equipSet.maxSets,equipSets+1))}>+</button>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="section-label">Price Breakdown</div>
+        <div style={{border:'1px solid #ccc',borderRadius:4,padding:'8px 12px',marginBottom:20}}>
+          {sorted.map(h=><div key={h} className="price-row"><span style={{color:'#888'}}>Court Fee ({h}:00–{h+1}:00)</span><span>LKR 3,000</span></div>)}
+          {equipSets>0 && <div className="price-row"><span style={{color:'#888'}}>Equipment: {equipSet.setName} ×{equipSets}</span><span>LKR {equipTotal.toLocaleString()}</span></div>}
+          {kidsAdded && <div className="price-row"><span style={{color:'#888'}}>Kids Play Zone ({kidsCount} kid{kidsCount>1?'s':''} · {sorted.length} hr{sorted.length>1?'s':''})</span><span>LKR {kidsFee.toLocaleString()}</span></div>}
+          {recoveryAdded&&recoveryUnlocked && <div className="price-row"><span style={{color:'#888'}}>Recovery Area ({playerCount} people · {recoverySlot}:00–{recoverySlot+1}:00)</span><span>LKR {recFee.toLocaleString()}</span></div>}
+          <div className="price-row total"><span>Subtotal</span><span>LKR {total.toLocaleString()}</span></div>
+        </div>
+        <button className="btn-primary" onClick={handleAddToCart}>🛒 Add to Cart — LKR {total.toLocaleString()}</button>
+      </div>
+    </div>
+  );
+}
+
+function CartScreen({ navigate, cart, setCart }) {
+  const grandTotal = cart.reduce((sum,item)=>sum+item.subtotal,0);
+  const removeItem = id => setCart(prev=>prev.filter(item=>item.id!==id));
+  const sportIcon = { pickleball:'🏓', badminton:'🏸', cricket:'🏏', futsal:'⚽', kids:'🧒' };
+  if (cart.length===0) {
+    return (
+      <div className="screen">
+        <div className="screen-header"><span className="screen-title">My Cart</span></div>
+        <div className="screen-body" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1}}>
+          <div style={{fontFamily:'monospace',fontSize:32,marginBottom:12}}>🛒</div>
+          <div style={{fontFamily:'monospace',fontSize:15,color:'#333',marginBottom:6}}>Your cart is empty</div>
+          <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginBottom:24}}>Add a court booking to get started</div>
+          <button className="btn-primary" style={{width:'auto',padding:'10px 24px'}} onClick={() => navigate('home')}>Book a Court</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('summary')}>←</button>
+        <span className="screen-title">My Cart ({cart.length})</span>
+      </div>
+      <div className="screen-body">
+        {cart.map(item => (
+          <div key={item.id} style={{border:'1px solid #ccc',borderRadius:4,marginBottom:12,overflow:'hidden'}}>
+            <div style={{background:'#f0f0f0',padding:'8px 12px',borderBottom:'1px solid #e0e0e0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontFamily:'monospace',fontWeight:'bold',fontSize:13,color:'#333'}}>{sportIcon[item.sport]||'🏠'} {item.sportLabel} · {item.court==='Auto-Assigned'?'Auto-Assigned':item.court}</span>
+              <button onClick={() => removeItem(item.id)} style={{background:'none',border:'none',fontFamily:'monospace',fontSize:11,color:'#888',cursor:'pointer',textDecoration:'underline'}}>Remove</button>
+            </div>
+            <div style={{padding:'10px 12px'}}>
+              <div style={{fontFamily:'monospace',fontSize:12,color:'#666',marginBottom:6}}>📅 {item.date} · {item.playerCount} players</div>
+              {item.slots.map(h=><div key={h} style={{fontFamily:'monospace',fontSize:12,color:'#333',paddingLeft:8,marginBottom:2}}>• {h}:00 – {h+1}:00</div>)}
+              {item.equipSets>0 && <div style={{fontFamily:'monospace',fontSize:11,color:'#888',paddingLeft:8,marginTop:2}}>+ 🎒 {item.equipSetName} ×{item.equipSets}</div>}
+              {item.kidsAdded && <div style={{fontFamily:'monospace',fontSize:11,color:'#888',paddingLeft:8}}>+ 🧒 Kids Play Zone · {item.kidsCount} kid{item.kidsCount>1?'s':''}</div>}
+              {item.recoveryAdded && <div style={{fontFamily:'monospace',fontSize:11,color:'#888',paddingLeft:8}}>+ 💆 Recovery Area · {item.recoverySlot}:00–{item.recoverySlot+1}:00</div>}
+              <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between'}}>
+                <span style={{fontFamily:'monospace',fontSize:12,color:'#888'}}>Item total</span>
+                <span style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>LKR {item.subtotal.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+        <div style={{border:'2px solid #333',borderRadius:4,padding:12,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontFamily:'monospace',fontWeight:'bold',fontSize:14,color:'#333'}}>Grand Total</span>
+          <span style={{fontFamily:'monospace',fontWeight:'bold',fontSize:18,color:'#333'}}>LKR {grandTotal.toLocaleString()}</span>
+        </div>
+        <button className="btn-primary" style={{marginBottom:10}} onClick={() => navigate('payment')}>Proceed to Checkout — LKR {grandTotal.toLocaleString()}</button>
+        <button className="btn-secondary" onClick={() => navigate('home')}>+ Book Another</button>
+      </div>
+    </div>
+  );
+}
+
+function PaymentScreen({ navigate, cart }) {
+  const [method, setMethod] = useState('card');
+  const total = cart.length>0?cart.reduce((sum,item)=>sum+item.subtotal,0):3000;
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('cart')}>←</button>
+        <span className="screen-title">Payment</span>
+      </div>
+      <div className="screen-body">
+        <div style={{background:'#f0f0f0',border:'1px solid #ccc',borderRadius:4,padding:'10px 12px',marginBottom:14}}>
+          {cart.length>0?cart.map(item=>(
+            <div key={item.id} style={{fontFamily:'monospace',fontSize:12,color:'#333',marginBottom:2}}>{item.sportLabel} · {item.court} · {item.slots.length} slot{item.slots.length>1?'s':''}</div>
+          )):<div style={{fontFamily:'monospace',fontSize:12,color:'#333'}}>🏓 Pickleball · Auto-Assigned · 1 slot</div>}
+          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginTop:4}}>{DATES[0].full}</div>
+        </div>
+        <div className="big-amount">LKR {total.toLocaleString()}</div>
+        <div className="section-label">Payment Method</div>
+        <div className={`radio-option ${method==='card'?'selected':''}`} onClick={() => setMethod('card')}>
+          <div className="radio-dot" />
+          <span style={{fontFamily:'monospace',fontSize:14}}>💳 Credit / Debit Card</span>
+        </div>
+        {method==='card' && (
+          <div style={{marginTop:12,padding:12,border:'1px solid #ccc',borderRadius:4}}>
+            <div className="section-label" style={{marginTop:0}}>Card Number</div>
+            <input className="input-field" placeholder="1234 5678 9012 3456" style={{marginBottom:10}} />
+            <div style={{display:'flex',gap:10}}>
+              <div style={{flex:1}}>
+                <div className="section-label" style={{marginTop:0}}>Expiry</div>
+                <input className="input-field" placeholder="MM / YY" />
+              </div>
+              <div style={{flex:1}}>
+                <div className="section-label" style={{marginTop:0}}>CVV</div>
+                <input className="input-field" placeholder="•••" />
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{marginTop:20}}>
+          <button className="btn-primary" onClick={() => navigate('confirm')}>Pay &amp; Confirm — LKR {total.toLocaleString()}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmationScreen({ navigate, playerCount, court, sport, cart, setCart, setBookings, setSharedBookings }) {
+  const committed = useRef(false);
+  useEffect(() => {
+    if (!committed.current && cart.length>0) {
+      committed.current = true;
+      setBookings(prev=>[...prev,...cart]);
+      if (setSharedBookings) {
+        const newRows = cart.flatMap(item =>
+          item.slots.map(h => ({
+            id: `BNC-${Date.now()}-${h}`,
+            customer: 'Dusara Abeysinghe',
+            phone: '+94 77 123 4567',
+            sport: item.sportLabel,
+            court: item.court==='Auto-Assigned'?'Court A':item.court,
+            date: '2026-04-20',
+            start: `${String(h).padStart(2,'0')}:00`,
+            end: `${String(h+1).padStart(2,'0')}:00`,
+            players: item.playerCount,
+            pkg: 'None',
+            status: 'Confirmed',
+            notes: ''
+          }))
+        );
+        setSharedBookings(prev=>[...prev,...newRows]);
+      }
+      setCart([]);
+    }
+  }, []);
+  const sportLabel = { pickleball:'Pickleball', badminton:'Badminton', cricket:'Cricket', futsal:'Futsal' }[sport]||'Pickleball';
+  return (
+    <div className="screen">
+      <div className="screen-body" style={{display:'flex',flexDirection:'column',alignItems:'center',paddingTop:32}}>
+        <div className="confirm-check">✓</div>
+        <div style={{fontFamily:'monospace',fontSize:20,fontWeight:'bold',color:'#333',marginBottom:20}}>Booking Confirmed!</div>
+        <div className="summary-card" style={{width:'100%'}}>
+          <div className="summary-row"><span className="label">Booking ID</span><span style={{fontFamily:'monospace',fontSize:12}}>BNC-2026-004</span></div>
+          <div className="summary-row"><span className="label">Sport</span><span>{sportLabel}</span></div>
+          <div className="summary-row"><span className="label">Court</span><span>{court==='Auto-Assigned'?'Auto-Assigned':court||'Court A'}</span></div>
+          <div className="summary-row"><span className="label">Date</span><span>Apr 20, 2026</span></div>
+          <div className="summary-row"><span className="label">Players</span><span>{playerCount}</span></div>
+          <div className="summary-row"><span className="label">Amount Paid</span><span>LKR 3,750</span></div>
+        </div>
+        <QRPlaceholder />
+        <div style={{width:'100%',display:'flex',flexDirection:'column',gap:10}}>
+          <button className="btn-primary" onClick={() => navigate('mybookings')}>View My Bookings</button>
+          <button className="btn-secondary" onClick={() => navigate('home')}>Back to Home</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KidsZoneScreen({ navigate, setKidsCount, kidsCount }) {
+  const [dateIdx, setDateIdx] = useState(0);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const total = 1500 * kidsCount;
+  const handleSlotSelect = (h) => {
+    setSelectedSlot(h);
+    navigate('payment');
+  };
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <span className="screen-title">🧒 Kids Play Zone</span>
+      </div>
+      <div className="screen-body">
+        <div className="section-label">Number of Kids</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',border:'1px solid #ccc',borderRadius:4,marginBottom:6}}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>Kids (ages 3–12)</span>
+          <div className="stepper">
+            <button className="stepper-btn" onClick={() => setKidsCount(Math.max(1,kidsCount-1))}>−</button>
+            <span className="stepper-val">{kidsCount}</span>
+            <button className="stepper-btn" onClick={() => setKidsCount(Math.min(4,kidsCount+1))}>+</button>
+          </div>
+        </div>
+        <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333',marginBottom:14,textAlign:'right'}}>
+          LKR {total.toLocaleString()} · {kidsCount} kid{kidsCount>1?'s':''} · 1 hr
+        </div>
+        <div className="section-label">Select Date</div>
+        <DatePicker selected={dateIdx} onSelect={setDateIdx} />
+        <div className="section-label">Pick a Slot — tap to book</div>
+        <SlotGrid slots={KIDS_SLOTS} selectedSlots={[]} multiSelect={false} onSelect={handleSlotSelect} />
+        <div style={{border:'1px dashed #ccc',borderRadius:4,padding:12,marginBottom:14,background:'#fafafa'}}>
+          <div style={{fontFamily:'monospace',fontSize:12,color:'#555'}}>
+            💡 Booking a court too? Add Kids Zone at 50% off (LKR 750/kid/hr) during checkout.
+          </div>
+          <button className="link-btn" style={{fontSize:11,marginTop:6}} onClick={() => navigate('home')}>Book a court first →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecoveryInfoScreen({ navigate, recoveryPeople, setRecoveryPeople }) {
+  const [dateIdx, setDateIdx] = useState(0);
+  const [selectedSlots, setSelectedSlots] = useState([]);
+  const people = recoveryPeople || 2;
+  const setPeople = setRecoveryPeople || (() => {});
+  const RECOVERY_SLOTS = {};
+  HOURS.forEach(h => { RECOVERY_SLOTS[h] = [9,10,13,17].includes(h)?'booked':'available'; });
+  const toggleSlot = h => setSelectedSlots(prev => prev.includes(h)?prev.filter(s=>s!==h):[...prev,h]);
+  const hrs = selectedSlots.length || 1;
+  const total = RECOVERY_RATE_PER_HEAD * people * hrs;
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <span className="screen-title">💆 Recovery Area</span>
+      </div>
+      <div className="screen-body">
+        <div style={{border:'1px solid #ccc',borderRadius:4,padding:12,marginBottom:14,background:'#f9f9f9'}}>
+          <div style={{fontFamily:'monospace',fontSize:11,fontWeight:'bold',color:'#333',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.5px'}}>What's Included</div>
+          {['🧊 Ice Bath','🧘 Stretching Zone','💆 Massage Chairs'].map((item,i) => (
+            <div key={i} style={{fontFamily:'monospace',fontSize:12,color:'#555',padding:'4px 0',borderBottom:i<2?'1px solid #e0e0e0':'none'}}>{item}</div>
+          ))}
+        </div>
+
+        <div className="section-label">Number of People</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',border:'1px solid #ccc',borderRadius:4,marginBottom:6}}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>People (min 2 · max 8)</span>
+          <div className="stepper">
+            <button className="stepper-btn" onClick={() => setPeople(Math.max(2,people-1))}>−</button>
+            <span className="stepper-val">{people}</span>
+            <button className="stepper-btn" onClick={() => setPeople(Math.min(8,people+1))}>+</button>
+          </div>
+        </div>
+        <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:14,textAlign:'right'}}>LKR 500/person · capacity max 8</div>
+
+        <div className="section-label">Select Date</div>
+        <DatePicker selected={dateIdx} onSelect={setDateIdx} />
+
+        <div className="section-label">Select Hour(s)</div>
+        <SlotGrid slots={RECOVERY_SLOTS} selectedSlots={selectedSlots} onToggle={toggleSlot} multiSelect={true} />
+
+        {selectedSlots.length>0 && (
+          <div style={{border:'2px solid #333',borderRadius:4,padding:'10px 12px',marginBottom:16}}>
+            <div className="price-row"><span style={{color:'#888'}}>Recovery · {people} people × {selectedSlots.length} hr{selectedSlots.length>1?'s':''}</span><span>LKR {total.toLocaleString()}</span></div>
+            <div className="price-row total"><span>Total</span><span>LKR {total.toLocaleString()}</span></div>
+          </div>
+        )}
+
+        <button className="btn-primary" disabled={selectedSlots.length===0} onClick={() => navigate('payment')}>
+          {selectedSlots.length>0 ? `Book Recovery — LKR ${total.toLocaleString()}` : 'Select a slot to continue'}
+        </button>
+        <div style={{border:'1px solid #e0e0e0',borderRadius:4,padding:10,marginTop:12,background:'#fafafa'}}>
+          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',lineHeight:1.6}}>
+            💡 Booking a court? Recovery is auto-added as an add-on at checkout when you book 2+ hours.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MatchHubScreen({ navigate, playDates, matchRequests }) {
+  const incoming = matchRequests.filter(r=>r.dir==='in'&&r.status==='pending');
+  const activeDate = playDates[0]||null;
+  return (
+    <div className="screen">
+      <div className="screen-header"><span className="screen-title">🤝 Match Hub</span></div>
+      <div className="screen-body">
+        {activeDate && (
+          <div style={{background:'#f8f8f8',border:'1px solid #ccc',borderRadius:4,padding:12,marginBottom:14}}>
+            <div style={{fontFamily:'monospace',fontSize:12,fontWeight:'bold',color:'#333'}}>Upcoming Play Date</div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#555',marginTop:4}}>vs {activeDate.opponent} · {activeDate.sport} · {activeDate.date}</div>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginTop:2}}>Kids Zone auto-added ✓</div>
+          </div>
+        )}
+        {incoming.length>0 && (
+          <div style={{background:'#fffbf0',border:'1px solid #b8860b',borderRadius:4,padding:'10px 12px',marginBottom:14}}>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#b8860b',fontWeight:'bold'}}>⚡ {incoming.length} new match request{incoming.length>1?'s':''}</div>
+            <button className="link-btn" style={{fontSize:11,marginTop:4}} onClick={() => navigate('matchrequests')}>View Requests →</button>
+          </div>
+        )}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
+          <div className="card" style={{textAlign:'center',cursor:'pointer',margin:0}} onClick={() => navigate('playerfind')}>
+            <div style={{fontSize:28,marginBottom:8}}>🔍</div>
+            <div style={{fontFamily:'monospace',fontSize:12,fontWeight:'bold',color:'#333'}}>Find a Player</div>
+            <div style={{fontFamily:'monospace',fontSize:10,color:'#888',marginTop:4}}>Browse by sport and skill</div>
+          </div>
+          <div className="card" style={{textAlign:'center',cursor:'pointer',margin:0}} onClick={() => navigate('matchrequests')}>
+            <div style={{fontSize:28,marginBottom:8}}>📬</div>
+            <div style={{fontFamily:'monospace',fontSize:12,fontWeight:'bold',color:'#333'}}>My Requests</div>
+            {incoming.length>0 && <div style={{fontFamily:'monospace',fontSize:10,color:'#b8860b',marginTop:4,fontWeight:'bold'}}>{incoming.length} pending</div>}
+          </div>
+        </div>
+        {playDates.length>0 && (
+          <>
+            <div className="section-label">Play Dates</div>
+            <div className="booking-card" style={{cursor:'pointer'}} onClick={() => navigate('playdates')}>
+              <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>{playDates[0].sport} · {playDates[0].court}</div>
+              <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginTop:4}}>{playDates[0].date} · vs {playDates[0].opponent}</div>
+            </div>
+          </>
+        )}
+      </div>
+      <BottomNav active="matchhub" navigate={navigate} />
+    </div>
+  );
+}
+
+function PlayerFindScreen({ navigate, matchRequests, setMatchRequests }) {
+  const [sportFilter, setSportFilter] = useState('');
+  const [skillFilter, setSkillFilter] = useState('');
+  const [sent, setSent] = useState({});
+  const allSports = ['Pickleball','Badminton','Cricket','Futsal'];
+  const allSkills = ['Beginner','Intermediate','Advanced'];
+  const filtered = MOCK_PLAYERS.filter(p => {
+    if (sportFilter && !p.sports.includes(sportFilter)) return false;
+    if (skillFilter && p.skillLevel!==skillFilter) return false;
+    return true;
+  });
+  const requestMatch = p => {
+    setSent(prev=>({...prev,[p.id]:true}));
+    setMatchRequests(prev=>[...prev,{ id:`MR-${Date.now()}`, dir:'out', player:p.name, initials:p.initials, sport:p.sports[0], skillLevel:p.skillLevel, dates:['Apr 25','Apr 26','Apr 27'], status:'pending' }]);
+  };
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('matchhub')}>←</button>
+        <span className="screen-title">Find a Player</span>
+      </div>
+      <div className="screen-body">
+        <div style={{marginBottom:10}}>
+          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.5px'}}>Sport</div>
+          <div style={{marginBottom:10}}>
+            <span className={`chip ${!sportFilter?'selected':''}`} onClick={() => setSportFilter('')}>All</span>
+            {allSports.map(s=><span key={s} className={`chip ${sportFilter===s?'selected':''}`} onClick={() => setSportFilter(s)}>{s}</span>)}
+          </div>
+          <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.5px'}}>Skill</div>
+          <div>
+            <span className={`chip ${!skillFilter?'selected':''}`} onClick={() => setSkillFilter('')}>All</span>
+            {allSkills.map(s=><span key={s} className={`chip ${skillFilter===s?'selected':''}`} onClick={() => setSkillFilter(s)}>{s}</span>)}
+          </div>
+        </div>
+        {filtered.map(p => (
+          <div key={p.id} className="player-card">
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+              <div className="player-avatar">{p.initials}</div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>{p.name}</div>
+                <span className="badge badge-skill">{p.skillLevel}</span>
+              </div>
+            </div>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:4}}>Sports: {p.sports.join(', ')}</div>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:8}}>Available: {p.days.join(', ')}</div>
+            <button className={sent[p.id]?'btn-secondary':'btn-primary'} disabled={!!sent[p.id]} onClick={() => requestMatch(p)} style={{fontSize:12,padding:8}}>
+              {sent[p.id]?'✓ Request Sent':'Request Match'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MatchRequestsScreen({ navigate, matchRequests, setMatchRequests, setPlayDates }) {
+  const [tab, setTab] = useState('received');
+  const incoming = matchRequests.filter(r=>r.dir==='in');
+  const outgoing = matchRequests.filter(r=>r.dir==='out');
+  const accept = r => {
+    setMatchRequests(prev=>prev.map(m=>m.id===r.id?{...m,status:'accepted'}:m));
+    setPlayDates(prev=>[...prev,{ id:Date.now(), opponent:r.player, sport:r.sport, court:'Court A', date:r.dates[0], kidsAdded:true }]);
+  };
+  const decline = r => setMatchRequests(prev=>prev.map(m=>m.id===r.id?{...m,status:'declined'}:m));
+  const RequestCard = ({ r }) => (
+    <div className="player-card">
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+        <div className="player-avatar">{r.initials}</div>
+        <div>
+          <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>{r.player}</div>
+          <span className="badge badge-skill">{r.skillLevel}</span>
+        </div>
+      </div>
+      <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:6}}>Sport: {r.sport}</div>
+      <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:8}}>Proposed: {r.dates.join(' · ')}</div>
+      {r.status==='pending'&&r.dir==='in' && (
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn-primary" style={{fontSize:12,padding:8}} onClick={() => accept(r)}>Accept</button>
+          <button className="btn-secondary" style={{fontSize:12,padding:8}} onClick={() => decline(r)}>Decline</button>
+        </div>
+      )}
+      {r.status!=='pending' && <div style={{fontFamily:'monospace',fontSize:11,color:r.status==='accepted'?'#555':'#aaa',textTransform:'capitalize'}}>● {r.status}</div>}
+      {r.dir==='out'&&r.status==='pending' && <div style={{fontFamily:'monospace',fontSize:11,color:'#888'}}>● Awaiting response</div>}
+    </div>
+  );
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('matchhub')}>←</button>
+        <span className="screen-title">Match Requests</span>
+      </div>
+      <div className="screen-body">
+        <div className="tab-bar">
+          <button className={`tab-btn ${tab==='received'?'active':''}`} onClick={() => setTab('received')}>Received {incoming.length>0&&`(${incoming.length})`}</button>
+          <button className={`tab-btn ${tab==='sent'?'active':''}`} onClick={() => setTab('sent')}>Sent</button>
+        </div>
+        {tab==='received'&&(incoming.length===0?<div style={{textAlign:'center',fontFamily:'monospace',fontSize:13,color:'#aaa',marginTop:32}}>No incoming requests</div>:incoming.map(r=><RequestCard key={r.id} r={r}/>))}
+        {tab==='sent'&&(outgoing.length===0?<div style={{textAlign:'center',fontFamily:'monospace',fontSize:13,color:'#aaa',marginTop:32}}>No sent requests</div>:outgoing.map(r=><RequestCard key={r.id} r={r}/>))}
+      </div>
+    </div>
+  );
+}
+
+function PlayDatesScreen({ navigate, playDates }) {
+  if (playDates.length===0) {
+    return (
+      <div className="screen">
+        <div className="screen-header">
+          <button className="back-btn" onClick={() => navigate('matchhub')}>←</button>
+          <span className="screen-title">Play Dates</span>
+        </div>
+        <div className="screen-body" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1}}>
+          <div style={{fontFamily:'monospace',fontSize:32,marginBottom:12}}>📅</div>
+          <div style={{fontFamily:'monospace',fontSize:14,color:'#888',textAlign:'center'}}>No confirmed play dates yet</div>
+          <button className="link-btn" style={{marginTop:16}} onClick={() => navigate('playerfind')}>Find a Player →</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('matchhub')}>←</button>
+        <span className="screen-title">Play Dates</span>
+      </div>
+      <div className="screen-body">
+        {playDates.map(pd=>(
+          <div key={pd.id} className="booking-card">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+              <div>
+                <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>{pd.sport} · {pd.court}</div>
+                <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginTop:2}}>{pd.date} · vs {pd.opponent}</div>
+              </div>
+              {pd.kidsAdded&&<span className="badge" style={{background:'#f0f0f0',border:'1px solid #ccc',color:'#555',fontSize:9}}>🧒 Kids Auto-Added</span>}
+            </div>
+            {pd.kidsAdded&&<button className="link-btn" style={{fontSize:11}} onClick={() => navigate('kids')}>Manage Kids Zone booking →</button>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BidFlowScreen({ navigate, bidSlot, myBids, setMyBids, setSharedBids }) {
+  const minBid = (bidSlot?.currentBid||3500)+(bidSlot?.minIncrement||500);
+  const [bidAmount, setBidAmount] = useState(minBid);
+  const increment = () => setBidAmount(prev=>prev+500);
+  const decrement = () => setBidAmount(prev=>Math.max(minBid,prev-500));
+  const placeBid = () => {
+    const newBid = { id:`BID-${Date.now()}`, court:bidSlot.court, date:bidSlot.date, hour:bidSlot.hour, sport:bidSlot.sport||'', bidder:'Dusara Abeysinghe', phone:'+94 77 123 4567', amount:bidAmount, placed:new Date().toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}), status:'Active' };
+    if (setSharedBids) setSharedBids(prev=>[...prev,newBid]);
+    setMyBids(prev=>[...prev,newBid.id]);
+    navigate('bidconfirm');
+  };
+  if (!bidSlot) return (
+    <div className="screen">
+      <div className="screen-header"><button className="back-btn" onClick={() => navigate('slots')}>←</button><span className="screen-title">Bid on Slot</span></div>
+      <div className="screen-body" style={{display:'flex',alignItems:'center',justifyContent:'center',flex:1}}>
+        <div style={{fontFamily:'monospace',color:'#888'}}>No hotspot slot selected</div>
+      </div>
+    </div>
+  );
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('slots')}>←</button>
+        <span className="screen-title">🔥 Hotspot Bid</span>
+      </div>
+      <div className="screen-body">
+        <div className="summary-card">
+          <div className="summary-row"><span className="label">Court</span><span>{bidSlot.court}</span></div>
+          <div className="summary-row"><span className="label">Date</span><span>{bidSlot.date}</span></div>
+          <div className="summary-row"><span className="label">Time</span><span>{bidSlot.hour}:00 – {bidSlot.hour+1}:00</span></div>
+          <div className="summary-row"><span className="label">Current Highest</span><span style={{fontWeight:'bold'}}>LKR {(bidSlot.currentBid||3500).toLocaleString()}</span></div>
+          <div className="summary-row"><span className="label">Min Increment</span><span>LKR {(bidSlot.minIncrement||500).toLocaleString()}</span></div>
+        </div>
+        <div className="section-label">Your Bid</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,padding:20,border:'1px solid #ccc',borderRadius:4,marginBottom:20}}>
+          <button className="stepper-btn" onClick={decrement} style={{width:44,height:44,fontSize:22}}>−</button>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:4}}>Your Bid</div>
+            <div style={{fontFamily:'monospace',fontSize:24,fontWeight:'bold',color:'#333'}}>LKR {bidAmount.toLocaleString()}</div>
+          </div>
+          <button className="stepper-btn" onClick={increment} style={{width:44,height:44,fontSize:22}}>+</button>
+        </div>
+        <button className="btn-primary" style={{marginBottom:10}} onClick={placeBid}>Place Bid — LKR {bidAmount.toLocaleString()}</button>
+        <button className="btn-secondary" onClick={() => navigate('slots')}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function BidConfirmScreen({ navigate, myBids, sharedBids }) {
+  const latestBid = sharedBids&&myBids.length>0?sharedBids.find(b=>b.id===myBids[myBids.length-1]):null;
+  return (
+    <div className="screen">
+      <div className="screen-body" style={{display:'flex',flexDirection:'column',alignItems:'center',paddingTop:32}}>
+        <div className="confirm-check" style={{borderColor:'#b8860b',color:'#b8860b'}}>🔥</div>
+        <div style={{fontFamily:'monospace',fontSize:18,fontWeight:'bold',color:'#333',marginBottom:8}}>Bid Placed!</div>
+        <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginBottom:20,textAlign:'center'}}>You'll be notified if you're outbid</div>
+        {latestBid && (
+          <div className="summary-card" style={{width:'100%'}}>
+            <div className="summary-row"><span className="label">Bid Ref</span><span style={{fontFamily:'monospace',fontSize:12}}>{latestBid.id}</span></div>
+            <div className="summary-row"><span className="label">Court</span><span>{latestBid.court}</span></div>
+            <div className="summary-row"><span className="label">Time</span><span>{latestBid.hour}:00 – {latestBid.hour+1}:00</span></div>
+            <div className="summary-row"><span className="label">Your Bid</span><span style={{fontWeight:'bold'}}>LKR {latestBid.amount.toLocaleString()}</span></div>
+            <div className="summary-row"><span className="label">Status</span><span className="badge badge-winning">Winning</span></div>
+          </div>
+        )}
+        <div style={{width:'100%',display:'flex',flexDirection:'column',gap:10}}>
+          <button className="btn-primary" onClick={() => navigate('mybids')}>View My Bids</button>
+          <button className="btn-secondary" onClick={() => navigate('home')}>Back to Home</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MyBidsScreen({ navigate, myBids, sharedBids, setBidSlot }) {
+  const myBidsList = (sharedBids||[]).filter(b=>myBids.includes(b.id));
+  if (myBidsList.length===0) {
+    return (
+      <div className="screen">
+        <div className="screen-header">
+          <button className="back-btn" onClick={() => navigate('home')}>←</button>
+          <span className="screen-title">My Bids</span>
+        </div>
+        <div className="screen-body" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1}}>
+          <div style={{fontFamily:'monospace',fontSize:32,marginBottom:12}}>🔥</div>
+          <div style={{fontFamily:'monospace',fontSize:14,color:'#888',textAlign:'center'}}>No active bids yet</div>
+          <button className="link-btn" style={{marginTop:16}} onClick={() => navigate('slots')}>Browse Hotspot Slots →</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <span className="screen-title">My Bids ({myBidsList.length})</span>
+      </div>
+      <div className="screen-body">
+        {myBidsList.map(b=>(
+          <div key={b.id} className="bid-card">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+              <div>
+                <div style={{fontFamily:'monospace',fontSize:13,fontWeight:'bold',color:'#333'}}>🔥 {b.court} — {b.hour}:00–{b.hour+1}:00</div>
+                <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginTop:2}}>{b.date}</div>
+              </div>
+              <span className={`badge ${b.status==='Winning'||b.status==='Active'?'badge-winning':'badge-outbid'}`}>{b.status==='Active'?'Winning':b.status}</span>
+            </div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#555',marginBottom:4}}>Your bid: LKR {b.amount.toLocaleString()}</div>
+            {b.status==='Outbid' && (
+              <button className="btn-primary" style={{fontSize:12,padding:8}} onClick={() => {
+                setBidSlot({ hour:b.hour, court:b.court, sport:b.sport||'', date:b.date, currentBid:b.amount, minIncrement:500 });
+                navigate('bidflow');
+              }}>⚠️ Raise Bid</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const SPORT_ICON = { pickleball:'🏓', badminton:'🏸', cricket:'🏏', futsal:'⚽', kids:'🧒' };
+
+function MyBookingsScreen({ navigate, bookings, setBookings }) {
+  const [tab, setTab] = useState('upcoming');
+  const cancelBooking = id => setBookings(prev=>prev.filter(b=>b.id!==id));
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <span className="screen-title">My Bookings</span>
+      </div>
+      <div className="screen-body">
+        <div className="tab-bar">
+          <button className={`tab-btn ${tab==='upcoming'?'active':''}`} onClick={() => setTab('upcoming')}>Upcoming {bookings.length>0&&`(${bookings.length})`}</button>
+          <button className={`tab-btn ${tab==='past'?'active':''}`} onClick={() => setTab('past')}>Past</button>
+        </div>
+        {tab==='upcoming' && (
+          <>
+            {bookings.length===0&&<div style={{textAlign:'center',fontFamily:'monospace',fontSize:13,color:'#aaa',marginTop:32}}>No upcoming bookings</div>}
+            {bookings.map(item=>(
+              <div key={item.id} className="booking-card">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                  <div>
+                    <div style={{fontFamily:'monospace',fontWeight:'bold',color:'#333',fontSize:13}}>{SPORT_ICON[item.sport]||'🏠'} {item.sportLabel} · {item.court}</div>
+                    <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginTop:4}}>{item.date}</div>
+                    {item.slots&&item.slots.map(h=><div key={h} style={{fontFamily:'monospace',fontSize:12,color:'#666',paddingLeft:4}}>· {h}:00 – {h+1}:00</div>)}
+                  </div>
+                  <span className="badge badge-confirmed">Confirmed</span>
+                </div>
+                <button className="link-btn" style={{color:'#888'}} onClick={() => cancelBooking(item.id)}>Cancel</button>
+              </div>
+            ))}
+          </>
+        )}
+        {tab==='past' && (
+          <>
+            <div className="booking-card">
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div><div style={{fontFamily:'monospace',fontWeight:'bold',color:'#333',fontSize:13}}>🏸 Badminton · Court B</div><div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginTop:4}}>Apr 18 · 14:00 – 15:00</div></div>
+                <span className="badge badge-completed">Completed</span>
+              </div>
+            </div>
+            <div className="booking-card">
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div><div style={{fontFamily:'monospace',fontWeight:'bold',color:'#333',fontSize:13}}>🏏 Cricket · Field</div><div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginTop:4}}>Apr 15 · 16:00 – 17:00</div></div>
+                <span className="badge badge-completed">Completed</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      <BottomNav active="mybookings" navigate={navigate} />
+    </div>
+  );
+}
+
+function PackagesScreen({ navigate, packages }) {
+  const pkgList = (packages||[]).filter(p=>p.active||p.cta==='Coming Soon');
+  const handleCta = p => {
+    if (p.cta==='Coming Soon') return;
+    if (p.name.includes('Kids Zone')) { navigate('kids'); return; }
+    navigate('home');
+  };
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('home')}>←</button>
+        <span className="screen-title">Packages &amp; Offers</span>
+      </div>
+      <div className="screen-body">
+        {pkgList.map((p,i)=>(
+          <div key={p.id||i} className="package-card">
+            <div style={{fontFamily:'monospace',fontWeight:'bold',color:'#333',marginBottom:4}}>{p.icon} {p.name}</div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#666',marginBottom:4}}>{p.desc}</div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#444',marginBottom:10}}>{p.displayPrice||''}</div>
+            <button className={p.cta==='Coming Soon'?'btn-secondary':'btn-primary'} disabled={p.cta==='Coming Soon'} onClick={() => handleCta(p)} style={{fontSize:12}}>{p.cta}</button>
+          </div>
+        ))}
+        <div style={{marginTop:8,padding:12,border:'1px dashed #ccc',borderRadius:4,cursor:'pointer'}} onClick={() => navigate('tournaments')}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#555'}}>🏆 View Tournaments →</span>
+        </div>
+      </div>
+      <BottomNav active="packages" navigate={navigate} />
+    </div>
+  );
+}
+
+function TournamentsScreen({ navigate }) {
+  const tournaments = [
+    { icon:'🏓', name:'Weekend Pickleball Open', date:'Apr 26–27', entry:'LKR 2,000 / team', spots:'12 / 16 teams registered' },
+    { icon:'🏸', name:'Badminton Doubles League', date:'May 3',    entry:'LKR 1,500 / pair', spots:'8 spots left' },
+  ];
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <button className="back-btn" onClick={() => navigate('packages')}>←</button>
+        <span className="screen-title">Tournaments</span>
+      </div>
+      <div className="screen-body">
+        {tournaments.map((t,i)=>(
+          <div key={i} className="card" style={{marginBottom:14}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+              <div style={{fontFamily:'monospace',fontWeight:'bold',color:'#333',fontSize:14}}>{t.icon} {t.name}</div>
+              <span className="badge badge-coming-soon">Soon</span>
+            </div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#666',marginBottom:2}}>📅 {t.date}</div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#666',marginBottom:2}}>🎟 Entry: {t.entry}</div>
+            <div style={{fontFamily:'monospace',fontSize:12,color:'#888',marginBottom:12}}>👥 {t.spots}</div>
+            <button className="btn-secondary" disabled style={{fontSize:12,color:'#aaa'}}>Register</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProfileScreen({ navigate, playerProfile }) {
+  const [alert, setAlert] = useState(null);
+  const items = [
+    { icon:'✏️', label:'Edit Profile',         action:() => navigate('profilesetup') },
+    { icon:'📋', label:'My Bookings',           action:() => navigate('mybookings') },
+    { icon:'📖', label:'How to Use the App',    action:() => navigate('onboarding') },
+    { icon:'💳', label:'Payment History',       action:() => setAlert('Coming Soon') },
+    { icon:'🔔', label:'Notifications',         action:() => setAlert('Coming Soon') },
+    { icon:'❓', label:'Help & Support',        action:() => setAlert('Coming Soon') },
+    { icon:'🚪', label:'Logout',               action:() => navigate('splash') },
+  ];
+  const sportEmoji = { Pickleball:'🏓', Badminton:'🏸', Cricket:'🏏', Futsal:'⚽' };
+  return (
+    <div className="screen" style={{position:'relative'}}>
+      {alert && (
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.4)',zIndex:50,display:'flex',alignItems:'center',justifyContent:'center'}} onClick={() => setAlert(null)}>
+          <div style={{background:'#fff',border:'2px solid #333',borderRadius:4,padding:'20px 32px',fontFamily:'monospace',fontSize:14,color:'#333',textAlign:'center'}}>
+            <div style={{fontWeight:'bold',marginBottom:8}}>Coming Soon</div>
+            <div style={{fontSize:12,color:'#888'}}>Tap anywhere to dismiss</div>
+          </div>
+        </div>
+      )}
+      <div className="screen-header"><span className="screen-title">Profile</span></div>
+      <div className="screen-body">
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',marginBottom:20}}>
+          <div style={{width:72,height:72,borderRadius:'50%',border:'2px solid #333',background:'#f0f0f0',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'monospace',fontWeight:'bold',fontSize:22,color:'#333',marginBottom:10}}>
+            {playerProfile.name?playerProfile.name.slice(0,2).toUpperCase():'DA'}
+          </div>
+          <div style={{fontFamily:'monospace',fontWeight:'bold',fontSize:16,color:'#333'}}>{playerProfile.name||'Dusara'} Abeysinghe</div>
+          <div style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>+94 77 123 4567</div>
+          {playerProfile.skillLevel && (
+            <div style={{marginTop:8,display:'flex',alignItems:'center',gap:8}}>
+              <span className="badge badge-skill">{playerProfile.skillLevel}</span>
+              {(playerProfile.sports||[]).map(s=><span key={s} title={s} style={{fontSize:16}}>{sportEmoji[s]||'🎯'}</span>)}
+            </div>
+          )}
+        </div>
+        {items.map((item,i)=>(
+          <div key={i} className="profile-item" onClick={item.action}>
+            <span style={{fontFamily:'monospace',fontSize:14,color:item.label==='Logout'?'#888':'#333'}}>{item.icon} {item.label}</span>
+            <span style={{color:'#ccc',fontSize:16}}>›</span>
+          </div>
+        ))}
+      </div>
+      <BottomNav active="profile" navigate={navigate} />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// CUSTOMER APP
+// ═══════════════════════════════════════════════════════════
+
+function CustomerApp({ sharedBookings, setSharedBookings, sharedBids, setSharedBids, hotspotConfig, equipmentConfig, packages, sharedRecovery, setSharedRecovery }) {
+  const [screen, setScreen]                 = useState('splash');
+  const [history, setHistory]               = useState(['splash']);
+  const [sport, setSport]                   = useState('pickleball');
+  const [court, setCourt]                   = useState('Court A');
+  const [selectedSlots, setSelectedSlots]   = useState([]);
+  const [equipSets, setEquipSets]           = useState(0);
+  const [cart, setCart]                     = useState([]);
+  const [bookings, setBookings]             = useState([]);
+  const [playerCount, setPlayerCount]       = useState(2);
+  const [kidsAdded, setKidsAdded]           = useState(false);
+  const [recoveryAdded, setRecoveryAdded]   = useState(false);
+  const [kidsCount, setKidsCount]           = useState(1);
+  const [recoveryPeople, setRecoveryPeople] = useState(2);
+  const [playerProfile, setPlayerProfile]   = useState({ name:'Dusara', skillLevel:'Intermediate', sports:['Pickleball'], availability:['Sat','Sun'] });
+  const [matchRequests, setMatchRequests]   = useState(MATCH_REQUESTS_INIT);
+  const [playDates, setPlayDates]           = useState([]);
+  const [myBids, setMyBids]                 = useState([]);
+  const [bidSlot, setBidSlot]               = useState(null);
+
+  const navigate = useCallback((id) => {
+    setScreen(id);
+    setHistory(prev => {
+      const idx = prev.indexOf(id);
+      if (idx>=0) return prev.slice(0,idx+1);
+      return [...prev,id];
+    });
+  }, []);
+
+  const sp = {
+    navigate, sport, setSport, court, setCourt,
+    selectedSlots, setSelectedSlots,
+    equipSets, setEquipSets,
+    cart, setCart, bookings, setBookings,
+    setSharedBookings,
+    playerCount, setPlayerCount,
+    kidsAdded, setKidsAdded,
+    recoveryAdded, setRecoveryAdded,
+    kidsCount, setKidsCount,
+    recoveryPeople, setRecoveryPeople,
+    playerProfile, setPlayerProfile,
+    matchRequests, setMatchRequests,
+    playDates, setPlayDates,
+    myBids, setMyBids,
+    sharedBids, setSharedBids,
+    bidSlot, setBidSlot,
+    hotspotConfig, equipmentConfig,
+    packages,
+    sharedRecovery, setSharedRecovery,
+  };
+
+  const renderScreen = () => {
+    switch (screen) {
+      case 'splash':        return <SplashScreen {...sp} />;
+      case 'login':         return <LoginScreen {...sp} />;
+      case 'register':      return <RegistrationScreen {...sp} />;
+      case 'profilesetup':  return <ProfileSetupScreen {...sp} />;
+      case 'onboarding':    return <OnboardingScreen {...sp} />;
+      case 'home':          return <HomeScreen {...sp} />;
+      case 'court':         return <CourtSelectionScreen {...sp} />;
+      case 'slots':         return <SlotSelectionScreen {...sp} />;
+      case 'summary':       return <BookingSummaryScreen {...sp} />;
+      case 'cart':          return <CartScreen {...sp} />;
+      case 'payment':       return <PaymentScreen {...sp} />;
+      case 'confirm':       return <ConfirmationScreen {...sp} />;
+      case 'kids':          return <KidsZoneScreen {...sp} />;
+      case 'recovery':      return <RecoveryInfoScreen {...sp} />;
+      case 'matchhub':      return <MatchHubScreen {...sp} />;
+      case 'playerfind':    return <PlayerFindScreen {...sp} />;
+      case 'matchrequests': return <MatchRequestsScreen {...sp} />;
+      case 'playdates':     return <PlayDatesScreen {...sp} />;
+      case 'mybookings':    return <MyBookingsScreen {...sp} />;
+      case 'mybids':        return <MyBidsScreen {...sp} />;
+      case 'bidflow':       return <BidFlowScreen {...sp} />;
+      case 'bidconfirm':    return <BidConfirmScreen {...sp} />;
+      case 'packages':      return <PackagesScreen {...sp} />;
+      case 'tournaments':   return <TournamentsScreen {...sp} />;
+      case 'profile':       return <ProfileScreen {...sp} />;
+      default:              return <SplashScreen {...sp} />;
+    }
+  };
+
+  return (
+    <>
+      <div style={{color:'#666',fontFamily:'monospace',fontSize:12,marginBottom:12,letterSpacing:1,textAlign:'center'}}>
+        BOUNCE — Interactive Wireframe
+      </div>
+      <div style={{display:'flex',alignItems:'flex-start',gap:16}}>
+        <JourneyTracker history={history} current={screen} onNavigate={(id) => setScreen(id)} />
+        <div className="phone-wrap">
+          <div className="phone-frame">
+            <div className="phone-notch" />
+            <div className="phone-screen">{renderScreen()}</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN HELPERS
+// ═══════════════════════════════════════════════════════════
+
+function AdminBadge({ label, color, status }) {
+  const text = label || status || '';
+  const bg = color ? color+'22' : '#eee';
+  const border = color || '#aaa';
+  return <span style={{display:'inline-block',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,color:color||'#555',background:bg,border:`1px solid ${border}`,fontFamily:'monospace'}}>{text}</span>;
+}
+
+function AdminToggle({ checked, onChange, on, onToggle }) {
+  const isOn = checked !== undefined ? checked : on;
+  const handler = onChange || onToggle;
+  return (
+    <div className="toggle-wrap" onClick={handler} style={{cursor:'pointer',display:'inline-flex',alignItems:'center'}}>
+      <div className={`toggle-track ${isOn?'on':''}`}><div className="toggle-thumb" /></div>
+    </div>
+  );
+}
+
+function AdminModal({ title, onClose, children }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-box" onClick={e=>e.stopPropagation()}>
+        <div className="modal-header">
+          <span className="modal-title">{title}</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function FormGroup({ label, children }) {
+  return (
+    <div className="form-group">
+      {label&&<label className="lbl">{label}</label>}
+      {children}
+    </div>
+  );
+}
+
+function getSportSwitches(bookings, courtId, date) {
+  const sorted = bookings
+    .filter(b=>b.court===courtId&&b.date===date&&b.status==='Confirmed')
+    .sort((a,b)=>parseInt(a.start)-parseInt(b.start));
+  const switches=[];
+  for (let i=0;i<sorted.length-1;i++) {
+    if (sorted[i].sport!==sorted[i+1].sport&&sorted[i].end===sorted[i+1].start) {
+      switches.push({ at:sorted[i].end, from:sorted[i].sport, to:sorted[i+1].sport, court:courtId });
+    }
+  }
+  return switches;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN LOGIN
+// ═══════════════════════════════════════════════════════════
+
+function AdminLoginPage({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [pass, setPass] = useState('');
+  const [err, setErr] = useState('');
+  const [show, setShow] = useState(false);
+  function submit(e) {
+    e.preventDefault();
+    if (email==='admin@bounce.com'&&pass==='bounce2024') onLogin();
+    else setErr('Invalid credentials — try admin@bounce.com / bounce2024');
+  }
+  return (
+    <div className="adm-login-wrap">
+      <div>
+        <div className="adm-login-logo">
+          <div className="adm-logo-box">BOUNCE</div>
+          <div className="adm-logo-sub" style={{textAlign:'center',marginTop:4}}>Admin Dashboard</div>
+        </div>
+        <div style={{height:16}} />
+        <div className="adm-login-box">
+          <div className="adm-login-title">Admin Login</div>
+          {err&&<div className="adm-error-box">{err}</div>}
+          <form onSubmit={submit}>
+            <FormGroup label="Email">
+              <input className="adm-input-field" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@bounce.com" required />
+            </FormGroup>
+            <FormGroup label="Password">
+              <div className="adm-pw-wrap">
+                <input className="adm-input-field" type={show?'text':'password'} value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required style={{paddingRight:46}} />
+                <button type="button" className="adm-pw-toggle" onClick={()=>setShow(s=>!s)}>{show?'HIDE':'SHOW'}</button>
+              </div>
+            </FormGroup>
+            <div style={{height:8}} />
+            <button type="submit" className="adm-btn adm-btn-primary" style={{width:'100%',padding:9}}>Admin Login</button>
+          </form>
+          <div className="adm-login-hint">hint: admin@bounce.com / bounce2024</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN LAYOUT
+// ═══════════════════════════════════════════════════════════
+
+const NAV_ITEMS = [
+  { key:'dashboard', icon:'🏠', label:'Dashboard'        },
+  { key:'bookings',  icon:'📅', label:'Bookings'          },
+  { key:'manual',    icon:'➕', label:'Manual Booking'    },
+  { key:'courts',    icon:'🏟️', label:'Court Management' },
+  { key:'recovery',  icon:'💆', label:'Recovery Area'     },
+  { key:'bids',      icon:'🔥', label:'Hotspot Bids'      },
+  { key:'players',   icon:'🤝', label:'Players'           },
+  { key:'kids',      icon:'🧒', label:'Kids Zone'         },
+  { key:'packages',  icon:'📦', label:'Packages'          },
+  { key:'admins',    icon:'👤', label:'Admin Access'      },
+];
+
+function AdminLayout({ screen, setScreen, onLogout, children }) {
+  return (
+    <div className="adm-shell">
+      <aside className="adm-sidebar">
+        <div className="adm-sidebar-logo">
+          <div className="adm-logo-box">BOUNCE</div>
+          <div className="adm-logo-sub">Admin Panel</div>
+        </div>
+        <nav className="adm-sidebar-nav">
+          {NAV_ITEMS.map(item=>(
+            <button key={item.key} className={`adm-nav-item ${screen===item.key?'active':''}`} onClick={()=>setScreen(item.key)}>
+              <span className="nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="adm-sidebar-footer">
+          <span style={{fontSize:10,color:'#aaa',fontFamily:'monospace',textTransform:'uppercase',letterSpacing:'0.5px'}}>Logged in as</span>
+          <strong>Kasun Perera</strong>
+          <span style={{fontSize:10,color:'#aaa'}}>Super Admin</span>
+        </div>
+      </aside>
+      <div className="adm-main">
+        <header className="adm-topbar">
+          <div>
+            <div className="adm-topbar-title">{NAV_ITEMS.find(n=>n.key===screen)?.label||'Dashboard'}</div>
+            <div className="adm-topbar-sub">Mon, 20 Apr 2026</div>
+          </div>
+          <div className="adm-topbar-right">
+            <div className="adm-avatar-circle">KP</div>
+            <span className="adm-topbar-name">Kasun Perera</span>
+            <button className="adm-btn-logout" onClick={onLogout}>Logout</button>
+          </div>
+        </header>
+        <main className="adm-page-content">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── ADMIN PAGE: DASHBOARD HOME ─────────────────────────────────────────────
+function DashboardHome({ sharedBookings, sharedBids, sharedRecovery }) {
+  const bookings = sharedBookings || [];
+  const bids = sharedBids || [];
+  const recovery = sharedRecovery || [];
+  const confirmed = bookings.filter(b=>b.status==='Confirmed').length;
+  const activeBids = bids.filter(b=>b.status==='Active').length;
+  const recToday = recovery.filter(r=>r.date==='2026-04-20').length;
+  const revenue = confirmed * 2800;
+  const today = bookings.filter(b=>b.date==='2026-04-20');
+  const hoursSorted = [...today].sort((a,b)=>a.start.localeCompare(b.start));
+
+  const switches = getSportSwitches(bookings, 'Court A', '2026-04-20')
+    .concat(getSportSwitches(bookings, 'Court B', '2026-04-20'))
+    .concat(getSportSwitches(bookings, 'Field', '2026-04-20'));
+
+  const SPORT_ICONS = { Pickleball:'🏓', Badminton:'🏸', Cricket:'🏏', Futsal:'⚽', 'Kids Play Area':'🧒', 'Recovery Area':'💆' };
+  return (
+    <div>
+      <div className="adm-stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:20}}>
+        {[
+          {label:'Bookings Today',  value:today.length},
+          {label:'Confirmed',       value:confirmed},
+          {label:'Active Bids',     value:activeBids},
+          {label:'Recovery Today',  value:recToday},
+          {label:'Total Revenue',   value:`LKR ${revenue.toLocaleString()}`},
+          {label:'Pending',         value:bookings.filter(b=>b.status==='Pending').length},
+          {label:'Cancelled',       value:bookings.filter(b=>b.status==='Cancelled').length},
+          {label:'Total Players',   value:bookings.reduce((s,b)=>s+(b.players||0),0)},
+        ].map((s,i)=>(
+          <div key={i} className="adm-card" style={{padding:'14px 16px',textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,fontFamily:'monospace'}}>{s.value}</div>
+            <div style={{fontSize:11,color:'#888',marginTop:4,textTransform:'uppercase',letterSpacing:'0.5px'}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {switches.length>0&&(
+        <div className="adm-card" style={{padding:16,marginBottom:20,borderLeft:'3px solid #b8860b',background:'#fffbf0'}}>
+          <div style={{fontWeight:600,marginBottom:8,fontSize:13}}>⚑ Sport Switch Alerts Today</div>
+          {switches.map((sw,i)=>(
+            <div key={i} style={{fontSize:12,color:'#666',marginBottom:4}}>
+              {SPORT_ICONS[sw.from]||'?'} → {SPORT_ICONS[sw.to]||'?'} &nbsp;
+              <strong>{sw.from} → {sw.to}</strong> at {sw.at} — check equipment
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="adm-card" style={{padding:16}}>
+        <div style={{fontWeight:600,marginBottom:12,fontSize:13,textTransform:'uppercase',letterSpacing:'0.5px'}}>Today's Timeline — Apr 20</div>
+        {hoursSorted.length===0
+          ? <div style={{color:'#aaa',fontSize:12,textAlign:'center',padding:'20px 0'}}>No bookings today</div>
+          : hoursSorted.map((b,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'8px 0',borderBottom:'1px solid #f0f0f0'}}>
+                <div style={{width:90,fontSize:12,fontFamily:'monospace',color:'#555',flexShrink:0}}>{b.start}–{b.end}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13,fontWeight:500}}>{b.customer}</div>
+                  <div style={{fontSize:11,color:'#888'}}>{SPORT_ICONS[b.sport]||''} {b.sport} · {b.court}</div>
+                </div>
+                <AdminBadge label={b.status} color={b.status==='Confirmed'?'#2e7d32':b.status==='Pending'?'#b8860b':'#c62828'} />
+              </div>
+            ))
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: BOOKINGS ────────────────────────────────────────────────────
+function BookingsPage({ sharedBookings, setSharedBookings }) {
+  const bookings = sharedBookings || [];
+  const [filter, setFilter] = React.useState('All');
+  const statuses = ['All','Confirmed','Pending','Cancelled'];
+  const filtered = filter==='All' ? bookings : bookings.filter(b=>b.status===filter);
+  const SPORT_ICONS = { Pickleball:'🏓', Badminton:'🏸', Cricket:'🏏', Futsal:'⚽', 'Kids Play Area':'🧒', 'Recovery Area':'💆' };
+
+  const updateStatus = (id, status) => {
+    if (setSharedBookings) setSharedBookings(prev=>prev.map(b=>b.id===id?{...b,status}:b));
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex',gap:8,marginBottom:16}}>
+        {statuses.map(s=>(
+          <button key={s} onClick={()=>setFilter(s)}
+            className={`adm-btn ${filter===s?'adm-btn-primary':''}`}
+            style={{fontSize:12}}>{s}</button>
+        ))}
+        <div style={{marginLeft:'auto',fontSize:12,color:'#888',alignSelf:'center'}}>{filtered.length} bookings</div>
+      </div>
+      <div className="adm-card" style={{padding:0,overflow:'hidden'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['ID','Customer','Sport','Court','Date','Time','Players','Status','Actions'].map(h=>(
+                <th key={h} style={{padding:'10px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((b,i)=>(
+              <tr key={b.id||i} style={{borderBottom:'1px solid #f0f0f0'}}>
+                <td style={{padding:'9px 12px',fontFamily:'monospace',fontSize:11}}>{b.id}</td>
+                <td style={{padding:'9px 12px'}}>{b.customer}</td>
+                <td style={{padding:'9px 12px'}}>{SPORT_ICONS[b.sport]||''} {b.sport}</td>
+                <td style={{padding:'9px 12px'}}>{b.court}</td>
+                <td style={{padding:'9px 12px'}}>{b.date}</td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace'}}>{b.start}–{b.end}</td>
+                <td style={{padding:'9px 12px',textAlign:'center'}}>{b.players}</td>
+                <td style={{padding:'9px 12px'}}>
+                  <AdminBadge label={b.status} color={b.status==='Confirmed'?'#2e7d32':b.status==='Pending'?'#b8860b':'#c62828'} />
+                </td>
+                <td style={{padding:'9px 12px'}}>
+                  {b.status==='Pending'&&(
+                    <button className="adm-btn adm-btn-primary" style={{fontSize:11,padding:'3px 8px',marginRight:4}} onClick={()=>updateStatus(b.id,'Confirmed')}>Confirm</button>
+                  )}
+                  {b.status!=='Cancelled'&&(
+                    <button className="adm-btn" style={{fontSize:11,padding:'3px 8px',color:'#c62828'}} onClick={()=>updateStatus(b.id,'Cancelled')}>Cancel</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length===0&&<div style={{padding:'30px',textAlign:'center',color:'#aaa',fontSize:12}}>No bookings found</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: MANUAL BOOKING ──────────────────────────────────────────────
+function ManualBookingPage({ setSharedBookings }) {
+  const SPORTS_LIST = ['Pickleball','Badminton','Cricket','Futsal','Kids Play Area'];
+  const [form, setForm] = React.useState({ customer:'', phone:'', sport:'Pickleball', court:'Court A', date:'2026-04-20', start:'09:00', end:'10:00', players:2, notes:'' });
+  const [saved, setSaved] = React.useState(false);
+
+  const courts = { Pickleball:['Court A','Court B'], Badminton:['Court A','Court B'], Cricket:['Field'], Futsal:['Field'], 'Kids Play Area':['Kids Zone'] };
+
+  const handleSubmit = () => {
+    const id = `BNC-${Date.now()}-M`;
+    const booking = { id, ...form, status:'Confirmed' };
+    if (setSharedBookings) setSharedBookings(prev=>[...prev, booking]);
+    setSaved(true);
+    setTimeout(()=>setSaved(false), 2500);
+  };
+
+  const upd = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  return (
+    <div style={{maxWidth:520}}>
+      <div className="adm-card" style={{padding:24}}>
+        <div style={{fontWeight:600,marginBottom:18,fontSize:14,textTransform:'uppercase',letterSpacing:'0.5px'}}>New Manual Booking</div>
+        <FormGroup label="Customer Name">
+          <input className="adm-input-field" value={form.customer} onChange={e=>upd('customer',e.target.value)} placeholder="e.g. Amal Gunaratne" />
+        </FormGroup>
+        <FormGroup label="Phone">
+          <input className="adm-input-field" value={form.phone} onChange={e=>upd('phone',e.target.value)} placeholder="+94 7X XXX XXXX" />
+        </FormGroup>
+        <FormGroup label="Sport">
+          <select className="adm-input-field" value={form.sport} onChange={e=>{ upd('sport',e.target.value); upd('court',(courts[e.target.value]||['Court A'])[0]); }}>
+            {SPORTS_LIST.map(s=><option key={s}>{s}</option>)}
+          </select>
+        </FormGroup>
+        <FormGroup label="Court">
+          <select className="adm-input-field" value={form.court} onChange={e=>upd('court',e.target.value)}>
+            {(courts[form.sport]||['Court A']).map(c=><option key={c}>{c}</option>)}
+          </select>
+        </FormGroup>
+        <FormGroup label="Date">
+          <input className="adm-input-field" type="date" value={form.date} onChange={e=>upd('date',e.target.value)} />
+        </FormGroup>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          <FormGroup label="Start Time">
+            <input className="adm-input-field" type="time" value={form.start} onChange={e=>upd('start',e.target.value)} />
+          </FormGroup>
+          <FormGroup label="End Time">
+            <input className="adm-input-field" type="time" value={form.end} onChange={e=>upd('end',e.target.value)} />
+          </FormGroup>
+        </div>
+        <FormGroup label="Players">
+          <input className="adm-input-field" type="number" min={1} max={22} value={form.players} onChange={e=>upd('players',Number(e.target.value))} />
+        </FormGroup>
+        <FormGroup label="Notes">
+          <input className="adm-input-field" value={form.notes} onChange={e=>upd('notes',e.target.value)} placeholder="Optional" />
+        </FormGroup>
+        <button className="adm-btn adm-btn-primary" style={{width:'100%',marginTop:8}} onClick={handleSubmit} disabled={!form.customer||!form.phone}>
+          {saved ? '✓ Booking Added' : 'Confirm Booking'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: COURT MANAGEMENT ───────────────────────────────────────────
+function CourtManagementPage({ sharedBookings }) {
+  const bookings = sharedBookings || [];
+  const DATE = '2026-04-20';
+  const HOURS = Array.from({length:14},(_,i)=>8+i);
+  const COURTS_LIST = ['Court A','Court B','Field'];
+  const SPORT_ICONS = { Pickleball:'🏓', Badminton:'🏸', Cricket:'🏏', Futsal:'⚽', 'Kids Play Area':'🧒' };
+
+  const getBookingAt = (court, hour) => bookings.find(b=>
+    b.court===court && b.date===DATE && b.status==='Confirmed' &&
+    parseInt(b.start)<=hour && parseInt(b.end)>hour
+  );
+
+  const switches = {
+    'Court A': getSportSwitches(bookings,'Court A',DATE),
+    'Court B': getSportSwitches(bookings,'Court B',DATE),
+    'Field':   getSportSwitches(bookings,'Field',DATE),
+  };
+
+  return (
+    <div>
+      <div style={{fontSize:12,color:'#888',marginBottom:16}}>Timeline for {DATE}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
+        {COURTS_LIST.map(court=>(
+          <div key={court} className="adm-card" style={{padding:0,overflow:'hidden'}}>
+            <div style={{padding:'10px 12px',background:'#f5f5f5',fontWeight:600,fontSize:13,borderBottom:'1px solid #e0e0e0'}}>{court}</div>
+            {HOURS.map(hour=>{
+              const bk = getBookingAt(court, hour);
+              const sw = switches[court]?.find(s=>parseInt(s.at)===hour);
+              return (
+                <React.Fragment key={hour}>
+                  {sw&&(
+                    <div style={{padding:'4px 12px',background:'#fffbf0',borderTop:'1px solid #b8860b',borderBottom:'1px solid #b8860b',fontSize:10,color:'#b8860b',fontWeight:600}}>
+                      ⚑ Sport switch: {SPORT_ICONS[sw.from]||sw.from} → {SPORT_ICONS[sw.to]||sw.to} — prep needed
+                    </div>
+                  )}
+                  <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',borderBottom:'1px solid #f5f5f5',minHeight:36,background:bk?'#f0f7f0':'#fff'}}>
+                    <div style={{width:36,fontSize:11,fontFamily:'monospace',color:'#888',flexShrink:0}}>{String(hour).padStart(2,'0')}:00</div>
+                    {bk
+                      ? <div style={{flex:1}}>
+                          <div style={{fontSize:12,fontWeight:500,lineHeight:1.3}}>{bk.customer}</div>
+                          <div style={{fontSize:10,color:'#666'}}>{SPORT_ICONS[bk.sport]||''} {bk.sport}</div>
+                        </div>
+                      : <div style={{flex:1,fontSize:11,color:'#ccc'}}>Available</div>
+                    }
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: RECOVERY AREA ───────────────────────────────────────────────
+function RecoveryAreaPage({ sharedRecovery }) {
+  const recovery = sharedRecovery || [];
+  const [dateFilter, setDateFilter] = React.useState('2026-04-20');
+  const filtered = recovery.filter(r=>r.date===dateFilter);
+  const total = filtered.length;
+  const capacity = filtered.reduce((s,r)=>s+(r.players||0),0);
+
+  return (
+    <div>
+      <div className="adm-stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+        {[
+          {label:'Sessions Today', value:total},
+          {label:'Players Today',  value:capacity},
+          {label:'Max Capacity',   value:total*6},
+        ].map((s,i)=>(
+          <div key={i} className="adm-card" style={{padding:'14px 16px',textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,fontFamily:'monospace'}}>{s.value}</div>
+            <div style={{fontSize:11,color:'#888',marginTop:4,textTransform:'uppercase',letterSpacing:'0.5px'}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
+        <label style={{fontSize:12,color:'#555'}}>Filter by date:</label>
+        <input className="adm-input-field" type="date" value={dateFilter} onChange={e=>setDateFilter(e.target.value)} style={{width:150}} />
+      </div>
+      <div className="adm-card" style={{padding:0,overflow:'hidden'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['Time','Linked Booking','Customer','Players','Status'].map(h=>(
+                <th key={h} style={{padding:'10px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((r,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid #f0f0f0'}}>
+                <td style={{padding:'9px 12px',fontFamily:'monospace'}}>{r.time||'—'}</td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace',fontSize:11}}>{r.bookingId||'—'}</td>
+                <td style={{padding:'9px 12px'}}>{r.customer||'—'}</td>
+                <td style={{padding:'9px 12px',textAlign:'center'}}>{r.players||'—'}</td>
+                <td style={{padding:'9px 12px'}}>
+                  <AdminBadge label={r.status||'Available'} color={(r.players||0)>=6?'#c62828':'#2e7d32'} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {filtered.length===0&&<div style={{padding:'30px',textAlign:'center',color:'#aaa',fontSize:12}}>No recovery sessions for this date</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: HOTSPOT BIDS ────────────────────────────────────────────────
+function HotspotBidsPage({ sharedBids, setSharedBids, hotspotConfig, setHotspotConfig }) {
+  const bids = sharedBids || [];
+  const config = hotspotConfig || [];
+  const SPORT_ICONS = { Pickleball:'🏓', Badminton:'🏸', Cricket:'🏏', Futsal:'⚽' };
+
+  const toggleHotspot = (idx) => {
+    if (setHotspotConfig) setHotspotConfig(prev=>prev.map((h,i)=>i===idx?{...h,isHotspot:!h.isHotspot}:h));
+  };
+
+  const acceptBid = (bidId) => {
+    if (!setSharedBids) return;
+    setSharedBids(prev => {
+      const accepted = prev.find(b=>b.id===bidId);
+      return prev.map(b => {
+        if (b.id===bidId) return {...b, status:'Accepted'};
+        if (b.status==='Active' && accepted && b.court===accepted.court && b.date===accepted.date && b.hour===accepted.hour) return {...b, status:'Outbid'};
+        return b;
+      });
+    });
+  };
+
+  return (
+    <div>
+      <div className="adm-card" style={{padding:16,marginBottom:20}}>
+        <div style={{fontWeight:600,marginBottom:12,fontSize:13,textTransform:'uppercase',letterSpacing:'0.5px'}}>Hotspot Slot Configuration</div>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['Court','Date','Hour','Floor Price','Status','Action'].map(h=>(
+                <th key={h} style={{padding:'8px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {config.map((hs,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid #f0f0f0',background:hs.isHotspot?'#fffbf0':'#fff'}}>
+                <td style={{padding:'8px 12px'}}>{hs.court}</td>
+                <td style={{padding:'8px 12px',fontFamily:'monospace'}}>{hs.date}</td>
+                <td style={{padding:'8px 12px',fontFamily:'monospace'}}>{String(hs.hour).padStart(2,'0')}:00</td>
+                <td style={{padding:'8px 12px',fontFamily:'monospace'}}>LKR {hs.floor.toLocaleString()}</td>
+                <td style={{padding:'8px 12px'}}>
+                  <AdminBadge label={hs.isHotspot?'🔥 Hotspot':'Off'} color={hs.isHotspot?'#b8860b':'#aaa'} />
+                </td>
+                <td style={{padding:'8px 12px'}}>
+                  <button className="adm-btn adm-btn-primary" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>toggleHotspot(i)}>
+                    {hs.isHotspot?'Remove':'Set Hotspot'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="adm-card" style={{padding:16}}>
+        <div style={{fontWeight:600,marginBottom:12,fontSize:13,textTransform:'uppercase',letterSpacing:'0.5px'}}>Live Bid Board</div>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['Bid ID','Slot','Bidder','Amount','Placed','Status','Action'].map(h=>(
+                <th key={h} style={{padding:'8px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {bids.map((b,i)=>(
+              <tr key={b.id||i} style={{borderBottom:'1px solid #f0f0f0',background:b.status==='Accepted'?'#f0f7f0':b.status==='Outbid'?'#fff5f5':'#fff'}}>
+                <td style={{padding:'8px 12px',fontFamily:'monospace',fontSize:11}}>{b.id}</td>
+                <td style={{padding:'8px 12px',fontSize:11}}>{SPORT_ICONS[b.sport]||''} {b.court} {String(b.hour).padStart(2,'0')}:00</td>
+                <td style={{padding:'8px 12px'}}>{b.bidder}</td>
+                <td style={{padding:'8px 12px',fontFamily:'monospace'}}>LKR {b.amount.toLocaleString()}</td>
+                <td style={{padding:'8px 12px',fontFamily:'monospace'}}>{b.placed}</td>
+                <td style={{padding:'8px 12px'}}>
+                  <AdminBadge label={b.status} color={b.status==='Active'?'#2e7d32':b.status==='Accepted'?'#1565c0':b.status==='Outbid'?'#c62828':'#aaa'} />
+                </td>
+                <td style={{padding:'8px 12px'}}>
+                  {b.status==='Active'&&(
+                    <button className="adm-btn adm-btn-primary" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>acceptBid(b.id)}>Accept</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {bids.length===0&&<div style={{padding:'30px',textAlign:'center',color:'#aaa',fontSize:12}}>No active bids</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: PLAYERS ─────────────────────────────────────────────────────
+function PlayersPage() {
+  const [filterSport, setFilterSport] = React.useState('All');
+  const [filterSkill, setFilterSkill] = React.useState('All');
+  const [viewPlayer, setViewPlayer] = React.useState(null);
+  const SPORTS_LIST = ['All','Pickleball','Badminton','Cricket','Futsal'];
+  const SKILLS = ['All','Beginner','Intermediate','Advanced'];
+  const SPORT_ICONS = { Pickleball:'🏓', Badminton:'🏸', Cricket:'🏏', Futsal:'⚽' };
+
+  const filtered = MOCK_PLAYERS.filter(p=>{
+    if (filterSport!=='All'&&!p.sports?.includes(filterSport)) return false;
+    if (filterSkill!=='All'&&p.skillLevel!==filterSkill) return false;
+    return true;
+  });
+
+  return (
+    <div>
+      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+        <div style={{display:'flex',gap:4}}>
+          {SPORTS_LIST.map(s=>(
+            <button key={s} onClick={()=>setFilterSport(s)} className={`adm-btn ${filterSport===s?'adm-btn-primary':''}`} style={{fontSize:11}}>{s}</button>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:4}}>
+          {SKILLS.map(s=>(
+            <button key={s} onClick={()=>setFilterSkill(s)} className={`adm-btn ${filterSkill===s?'adm-btn-primary':''}`} style={{fontSize:11}}>{s}</button>
+          ))}
+        </div>
+        <div style={{marginLeft:'auto',fontSize:12,color:'#888',alignSelf:'center'}}>{filtered.length} players</div>
+      </div>
+
+      <div className="adm-card" style={{padding:0,overflow:'hidden'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['Player','Phone','Skill','Sports','Play Dates','Joined','Status','Actions'].map(h=>(
+                <th key={h} style={{padding:'10px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid #f0f0f0'}}>
+                <td style={{padding:'9px 12px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <div style={{width:28,height:28,borderRadius:'50%',background:'#333',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,flexShrink:0}}>{p.initials||p.name?.split(' ').map(x=>x[0]).join('')}</div>
+                    <span>{p.name}</span>
+                  </div>
+                </td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace',fontSize:11}}>{p.phone}</td>
+                <td style={{padding:'9px 12px'}}><AdminBadge label={p.skillLevel||'—'} color='#555' /></td>
+                <td style={{padding:'9px 12px'}}>{(p.sports||[]).map(s=>SPORT_ICONS[s]||s).join(' ')}</td>
+                <td style={{padding:'9px 12px',textAlign:'center'}}>{p.playDates||0}</td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace',fontSize:11}}>{p.joined||'—'}</td>
+                <td style={{padding:'9px 12px'}}>
+                  <AdminBadge label={p.status||'Active'} color={p.status==='Active'?'#2e7d32':'#aaa'} />
+                </td>
+                <td style={{padding:'9px 12px'}}>
+                  <button className="adm-btn adm-btn-primary" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>setViewPlayer(p)}>View</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {viewPlayer&&(
+        <AdminModal title={`Player — ${viewPlayer.name}`} onClose={()=>setViewPlayer(null)}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+            <div style={{width:48,height:48,borderRadius:'50%',background:'#333',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700}}>{viewPlayer.initials||'?'}</div>
+            <div>
+              <div style={{fontWeight:700,fontSize:15}}>{viewPlayer.name}</div>
+              <div style={{fontSize:12,color:'#888'}}>{viewPlayer.phone}</div>
+            </div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+            {[
+              {label:'Skill Level', value:viewPlayer.skillLevel||'—'},
+              {label:'Status',      value:viewPlayer.status||'Active'},
+              {label:'Play Dates',  value:viewPlayer.playDates||0},
+              {label:'Joined',      value:viewPlayer.joined||'—'},
+            ].map((r,i)=>(
+              <div key={i} style={{background:'#f5f5f5',borderRadius:6,padding:'10px 12px'}}>
+                <div style={{fontSize:10,color:'#888',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:4}}>{r.label}</div>
+                <div style={{fontSize:13,fontWeight:600}}>{r.value}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:12,color:'#555',marginBottom:6}}>Preferred Sports</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            {(viewPlayer.sports||[]).map(s=>(
+              <span key={s} style={{padding:'3px 10px',borderRadius:12,background:'#e0e0e0',fontSize:12}}>{s}</span>
+            ))}
+          </div>
+        </AdminModal>
+      )}
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: KIDS ZONE MANAGEMENT ────────────────────────────────────────
+function KidsZoneManagementPage({ sharedBookings }) {
+  const bookings = sharedBookings || [];
+  const [tab, setTab] = React.useState('standalone');
+  const kidsBookings = bookings.filter(b=>b.sport==='Kids Play Area');
+  const addonBookings = bookings.filter(b=>b.kidsAdded);
+  const shown = tab==='standalone' ? kidsBookings : addonBookings;
+
+  return (
+    <div>
+      <div className="adm-stat-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:20}}>
+        {[
+          {label:'Standalone Today', value:kidsBookings.filter(b=>b.date==='2026-04-20').length},
+          {label:'Add-on Today',     value:addonBookings.filter(b=>b.date==='2026-04-20').length},
+          {label:'Total Kids Slots', value:kidsBookings.length+addonBookings.length},
+        ].map((s,i)=>(
+          <div key={i} className="adm-card" style={{padding:'14px 16px',textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:700,fontFamily:'monospace'}}>{s.value}</div>
+            <div style={{fontSize:11,color:'#888',marginTop:4,textTransform:'uppercase',letterSpacing:'0.5px'}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:4,marginBottom:16}}>
+        <button className={`adm-btn ${tab==='standalone'?'adm-btn-primary':''}`} onClick={()=>setTab('standalone')}>Standalone</button>
+        <button className={`adm-btn ${tab==='addon'?'adm-btn-primary':''}`} onClick={()=>setTab('addon')}>Add-on</button>
+      </div>
+      <div className="adm-card" style={{padding:0,overflow:'hidden'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['Customer','Date','Time','Players',tab==='addon'?'Linked Court':'Court','Status'].map(h=>(
+                <th key={h} style={{padding:'10px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((b,i)=>(
+              <tr key={i} style={{borderBottom:'1px solid #f0f0f0'}}>
+                <td style={{padding:'9px 12px'}}>{b.customer}</td>
+                <td style={{padding:'9px 12px'}}>{b.date}</td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace'}}>{b.start}–{b.end}</td>
+                <td style={{padding:'9px 12px',textAlign:'center'}}>{b.players}</td>
+                <td style={{padding:'9px 12px'}}>{b.court}</td>
+                <td style={{padding:'9px 12px'}}><AdminBadge label={b.status} color={b.status==='Confirmed'?'#2e7d32':'#aaa'} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {shown.length===0&&<div style={{padding:'30px',textAlign:'center',color:'#aaa',fontSize:12}}>No {tab} bookings</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: PACKAGES (with Equipment Config tab) ────────────────────────
+function PackagesPage({ packages, setPackages, equipmentConfig, setEquipmentConfig }) {
+  const pkgs = packages || PACKAGES_INIT;
+  const [pageTab, setPageTab] = React.useState('packages');
+  const [editItem, setEditItem] = React.useState(null); // {sport, id}
+  const [editName, setEditName] = React.useState('');
+  const [editPrice, setEditPrice] = React.useState('');
+
+  const toggleActive = (id) => {
+    if (setPackages) setPackages(prev=>prev.map(p=>p.id===id?{...p,active:!p.active}:p));
+  };
+
+  const startEdit = (sport, item) => {
+    setEditItem({sport, id:item.id});
+    setEditName(item.name);
+    setEditPrice(String(item.price));
+  };
+
+  const saveEdit = () => {
+    if (!editItem||!setEquipmentConfig) return;
+    setEquipmentConfig(prev=>({
+      ...prev,
+      [editItem.sport]: prev[editItem.sport].map(i=>i.id===editItem.id?{...i,name:editName,price:Number(editPrice)}:i)
+    }));
+    setEditItem(null);
+  };
+
+  const SPORT_LABELS = ['pickleball','badminton','cricket','futsal'];
+
+  return (
+    <div>
+      <div style={{display:'flex',gap:4,marginBottom:20}}>
+        <button className={`adm-btn ${pageTab==='packages'?'adm-btn-primary':''}`} onClick={()=>setPageTab('packages')}>Packages</button>
+        <button className={`adm-btn ${pageTab==='equipment'?'adm-btn-primary':''}`} onClick={()=>setPageTab('equipment')}>Equipment Config</button>
+      </div>
+
+      {pageTab==='packages'&&(
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:16}}>
+          {pkgs.map(p=>(
+            <div key={p.id} className="adm-card" style={{padding:20,opacity:p.active?1:0.55}}>
+              <div style={{fontSize:24,marginBottom:8}}>{p.icon}</div>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>{p.name}</div>
+              <div style={{fontSize:12,color:'#666',marginBottom:8,lineHeight:1.5}}>{p.desc||p.description}</div>
+              <div style={{fontSize:13,fontFamily:'monospace',fontWeight:600,marginBottom:12}}>{p.displayPrice}</div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <AdminBadge label={p.active?'Active':'Inactive'} color={p.active?'#2e7d32':'#aaa'} />
+                <AdminToggle checked={!!p.active} onChange={()=>toggleActive(p.id)} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {pageTab==='equipment'&&(
+        <div>
+          {SPORT_LABELS.map(sport=>{
+            const items = (equipmentConfig||EQUIPMENT_CONFIG_INIT)[sport]||[];
+            return (
+              <div key={sport} className="adm-card" style={{padding:16,marginBottom:16}}>
+                <div style={{fontWeight:700,fontSize:13,textTransform:'capitalize',marginBottom:12}}>{sport}</div>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                  <thead>
+                    <tr style={{background:'#f5f5f5'}}>
+                      {['Item Name','Price (LKR)','Actions'].map(h=>(
+                        <th key={h} style={{padding:'8px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map(item=>(
+                      <tr key={item.id} style={{borderBottom:'1px solid #f0f0f0'}}>
+                        {editItem&&editItem.sport===sport&&editItem.id===item.id ? (
+                          <>
+                            <td style={{padding:'8px 12px'}}>
+                              <input className="adm-input-field" value={editName} onChange={e=>setEditName(e.target.value)} style={{width:'100%',minWidth:0}} />
+                            </td>
+                            <td style={{padding:'8px 12px'}}>
+                              <input className="adm-input-field" type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)} style={{width:90}} />
+                            </td>
+                            <td style={{padding:'8px 12px'}}>
+                              <button className="adm-btn adm-btn-primary" style={{fontSize:11,padding:'3px 8px',marginRight:4}} onClick={saveEdit}>Save</button>
+                              <button className="adm-btn" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>setEditItem(null)}>Cancel</button>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td style={{padding:'8px 12px'}}>{item.name}</td>
+                            <td style={{padding:'8px 12px',fontFamily:'monospace'}}>{item.price}</td>
+                            <td style={{padding:'8px 12px'}}>
+                              <button className="adm-btn adm-btn-primary" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>startEdit(sport,item)}>Edit</button>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ADMIN PAGE: ADMIN ACCESS ────────────────────────────────────────────────
+function AdminAccessPage() {
+  const [admins, setAdmins] = React.useState(ADMINS_INIT);
+  const [showAdd, setShowAdd] = React.useState(false);
+  const [form, setForm] = React.useState({name:'',email:'',role:'Staff'});
+
+  const add = () => {
+    setAdmins(prev=>[...prev,{id:`ADM-${Date.now()}`,name:form.name,email:form.email,role:form.role,status:'Active',joined:'2026-04-20'}]);
+    setShowAdd(false); setForm({name:'',email:'',role:'Staff'});
+  };
+
+  const toggleStatus = (id) => setAdmins(prev=>prev.map(a=>a.id===id?{...a,status:a.status==='Active'?'Inactive':'Active'}:a));
+
+  return (
+    <div>
+      <div style={{display:'flex',justifyContent:'flex-end',marginBottom:16}}>
+        <button className="adm-btn adm-btn-primary" onClick={()=>setShowAdd(true)}>+ Add Admin</button>
+      </div>
+      <div className="adm-card" style={{padding:0,overflow:'hidden',marginBottom:20}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr style={{background:'#f5f5f5'}}>
+              {['Name','Email','Role','Status','Joined','Actions'].map(h=>(
+                <th key={h} style={{padding:'10px 12px',textAlign:'left',fontWeight:600,borderBottom:'1px solid #e0e0e0',fontSize:11,textTransform:'uppercase',letterSpacing:'0.3px'}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {admins.map(a=>(
+              <tr key={a.id} style={{borderBottom:'1px solid #f0f0f0'}}>
+                <td style={{padding:'9px 12px',fontWeight:500}}>{a.name}</td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace',fontSize:11}}>{a.email}</td>
+                <td style={{padding:'9px 12px'}}>{a.role}</td>
+                <td style={{padding:'9px 12px'}}><AdminBadge label={a.status} color={a.status==='Active'?'#2e7d32':'#aaa'} /></td>
+                <td style={{padding:'9px 12px',fontFamily:'monospace',fontSize:11}}>{a.joined}</td>
+                <td style={{padding:'9px 12px'}}>
+                  {a.email!=='admin@bounce.com'&&(
+                    <button className="adm-btn" style={{fontSize:11,padding:'3px 8px'}} onClick={()=>toggleStatus(a.id)}>
+                      {a.status==='Active'?'Deactivate':'Activate'}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showAdd&&(
+        <AdminModal title="Add Admin" onClose={()=>setShowAdd(false)}>
+          <FormGroup label="Name"><input className="adm-input-field" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} /></FormGroup>
+          <FormGroup label="Email"><input className="adm-input-field" type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} /></FormGroup>
+          <FormGroup label="Role">
+            <select className="adm-input-field" value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}>
+              {['Super Admin','Manager','Staff'].map(r=><option key={r}>{r}</option>)}
+            </select>
+          </FormGroup>
+          <button className="adm-btn adm-btn-primary" style={{width:'100%'}} onClick={add} disabled={!form.name||!form.email}>Add Admin</button>
+        </AdminModal>
+      )}
+    </div>
+  );
+}
+
+// ─── ADMIN SHELL ─────────────────────────────────────────────────────────────
+function AdminShell({ sharedBookings, setSharedBookings, sharedBids, setSharedBids, hotspotConfig, setHotspotConfig, equipmentConfig, setEquipmentConfig, packages, setPackages, sharedRecovery, setSharedRecovery }) {
+  const [loggedIn, setLoggedIn] = React.useState(false);
+  const [screen, setScreen] = React.useState('dashboard');
+  const [loginEmail, setLoginEmail] = React.useState('');
+  const [loginPass, setLoginPass] = React.useState('');
+  const [loginErr, setLoginErr] = React.useState('');
+
+  const handleLogin = () => {
+    if (loginEmail==='admin@bounce.com'&&loginPass==='bounce2024') {
+      setLoggedIn(true); setLoginErr('');
+    } else {
+      setLoginErr('Invalid credentials');
+    }
+  };
+
+  if (!loggedIn) {
+    return (
+      <div className="adm-login-wrap">
+        <div className="adm-card" style={{width:340,padding:32}}>
+          <div style={{textAlign:'center',marginBottom:24}}>
+            <div style={{fontSize:28,fontWeight:900,letterSpacing:'-1px',fontFamily:'monospace'}}>BOUNCE</div>
+            <div style={{fontSize:12,color:'#888',marginTop:4}}>Admin Dashboard</div>
+          </div>
+          <FormGroup label="Email">
+            <input className="adm-input-field" type="email" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} placeholder="admin@bounce.com" onKeyDown={e=>e.key==='Enter'&&handleLogin()} />
+          </FormGroup>
+          <FormGroup label="Password">
+            <input className="adm-input-field" type="password" value={loginPass} onChange={e=>setLoginPass(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&handleLogin()} />
+          </FormGroup>
+          {loginErr&&<div style={{color:'#c62828',fontSize:12,marginBottom:12,textAlign:'center'}}>{loginErr}</div>}
+          <button className="adm-btn adm-btn-primary" style={{width:'100%'}} onClick={handleLogin}>Sign In</button>
+          <div style={{textAlign:'center',marginTop:12,fontSize:11,color:'#aaa'}}>admin@bounce.com / bounce2024</div>
+        </div>
+      </div>
+    );
+  }
+
+  const pageProps = { sharedBookings, setSharedBookings, sharedBids, setSharedBids, hotspotConfig, setHotspotConfig, equipmentConfig, setEquipmentConfig, packages, setPackages, sharedRecovery, setSharedRecovery };
+
+  const renderPage = () => {
+    switch(screen) {
+      case 'dashboard': return <DashboardHome sharedBookings={sharedBookings} sharedBids={sharedBids} sharedRecovery={sharedRecovery} />;
+      case 'bookings':  return <BookingsPage sharedBookings={sharedBookings} setSharedBookings={setSharedBookings} />;
+      case 'manual':    return <ManualBookingPage setSharedBookings={setSharedBookings} />;
+      case 'courts':    return <CourtManagementPage sharedBookings={sharedBookings} />;
+      case 'recovery':  return <RecoveryAreaPage sharedRecovery={sharedRecovery} />;
+      case 'bids':      return <HotspotBidsPage sharedBids={sharedBids} setSharedBids={setSharedBids} hotspotConfig={hotspotConfig} setHotspotConfig={setHotspotConfig} />;
+      case 'players':   return <PlayersPage />;
+      case 'kids':      return <KidsZoneManagementPage sharedBookings={sharedBookings} />;
+      case 'packages':  return <PackagesPage packages={packages} setPackages={setPackages} equipmentConfig={equipmentConfig} setEquipmentConfig={setEquipmentConfig} />;
+      case 'admins':    return <AdminAccessPage />;
+      default:          return <DashboardHome sharedBookings={sharedBookings} sharedBids={sharedBids} sharedRecovery={sharedRecovery} />;
+    }
+  };
+
+  return (
+    <AdminLayout screen={screen} setScreen={setScreen} onLogout={()=>setLoggedIn(false)}>
+      {renderPage()}
+    </AdminLayout>
+  );
+}
+
+// ─── SHARED APP (root — owns all cross-cutting state) ────────────────────────
+function SharedApp() {
+  const [sharedBookings,   setSharedBookings]   = React.useState(BOOKINGS_INIT);
+  const [sharedBids,       setSharedBids]       = React.useState(MOCK_BIDS);
+  const [hotspotConfig,    setHotspotConfig]    = React.useState(HOTSPOT_CONFIG_INIT);
+  const [equipmentConfig,  setEquipmentConfig]  = React.useState(EQUIPMENT_CONFIG_INIT);
+  const [packages,         setPackages]         = React.useState(PACKAGES_INIT);
+  const [sharedRecovery,   setSharedRecovery]   = React.useState(MOCK_RECOVERY);
+
+  return (
+    <div className="root-layout">
+      <div className="left-panel">
+        <CustomerApp
+          sharedBookings={sharedBookings}
+          setSharedBookings={setSharedBookings}
+          sharedBids={sharedBids}
+          setSharedBids={setSharedBids}
+          hotspotConfig={hotspotConfig}
+          equipmentConfig={equipmentConfig}
+          packages={packages}
+          sharedRecovery={sharedRecovery}
+          setSharedRecovery={setSharedRecovery}
+        />
+      </div>
+      <div className="right-panel">
+        <AdminShell
+          sharedBookings={sharedBookings}
+          setSharedBookings={setSharedBookings}
+          sharedBids={sharedBids}
+          setSharedBids={setSharedBids}
+          hotspotConfig={hotspotConfig}
+          setHotspotConfig={setHotspotConfig}
+          equipmentConfig={equipmentConfig}
+          setEquipmentConfig={setEquipmentConfig}
+          packages={packages}
+          setPackages={setPackages}
+          sharedRecovery={sharedRecovery}
+          setSharedRecovery={setSharedRecovery}
+        />
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<SharedApp />);
+</script>
+</body>
+</html>
