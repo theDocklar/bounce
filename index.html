@@ -412,10 +412,10 @@ const MOCK_BIDS = [
 ];
 
 const MOCK_RECOVERY = [
-  { id:'REC-001', date:'2026-04-20', time:'10:00–12:00', bookingId:'BNC-003', customer:'Lahiru Jayasinghe',  linkedCourt:'Field',   players:6,  status:'Confirmed' },
-  { id:'REC-002', date:'2026-04-20', time:'12:00–14:00', bookingId:'BNC-016', customer:'Priya Mendis',       linkedCourt:'Field',   players:10, status:'Confirmed' },
-  { id:'REC-003', date:'2026-04-21', time:'14:00–16:00', bookingId:'BNC-009', customer:'Saman Kumara',       linkedCourt:'Field',   players:8,  status:'Confirmed' },
-  { id:'REC-004', date:'2026-04-20', time:'14:00–16:00', bookingId:'BNC-017', customer:'Nimali Fernando',    linkedCourt:'Court B', players:4,  status:'Available' },
+  { id:'REC-001', date:'2026-04-20', time:'10:00–12:00', bookingId:'BNC-003', customer:'Lahiru Jayasinghe',  linkedCourt:'Field',   players:4, status:'Confirmed' },
+  { id:'REC-002', date:'2026-04-20', time:'12:00–14:00', bookingId:'BNC-016', customer:'Priya Mendis',       linkedCourt:'Field',   players:3, status:'Confirmed' },
+  { id:'REC-003', date:'2026-04-20', time:'14:00–16:00', bookingId:'BNC-009', customer:'Saman Kumara',       linkedCourt:'Field',   players:8, status:'Confirmed' },
+  { id:'REC-004', date:'2026-04-20', time:'16:00–18:00', bookingId:'BNC-017', customer:'Nimali Fernando',    linkedCourt:'Court B', players:4, status:'Confirmed' },
 ];
 
 const HOTSPOT_CONFIG_INIT = [
@@ -1297,16 +1297,52 @@ function KidsZoneScreen({ navigate, setKidsCount, kidsCount }) {
   );
 }
 
-function RecoveryInfoScreen({ navigate, recoveryPeople, setRecoveryPeople }) {
+function RecoveryInfoScreen({ navigate, recoveryPeople, setRecoveryPeople, sharedRecovery }) {
   const [dateIdx, setDateIdx] = useState(0);
   const [selectedSlots, setSelectedSlots] = useState([]);
-  const people = recoveryPeople || 2;
+  const people = recoveryPeople || 1;
   const setPeople = setRecoveryPeople || (() => {});
-  const RECOVERY_SLOTS = {};
-  HOURS.forEach(h => { RECOVERY_SLOTS[h] = [9,10,13,17].includes(h)?'booked':'available'; });
-  const toggleSlot = h => setSelectedSlots(prev => prev.includes(h)?prev.filter(s=>s!==h):[...prev,h]);
-  const hrs = selectedSlots.length || 1;
-  const total = RECOVERY_RATE_PER_HEAD * people * hrs;
+  const currentDate = DATES[dateIdx].iso;
+
+  // Parse "10:00–12:00" → [10, 11]
+  const parseHours = (timeStr) => {
+    const m = timeStr && timeStr.match(/(\d+):00[–\-](\d+):00/);
+    if (!m) return [];
+    const hrs = [];
+    for (let h = parseInt(m[1]); h < parseInt(m[2]); h++) hrs.push(h);
+    return hrs;
+  };
+
+  // How many people already booked (court add-ons + previous standalone) for a given hour
+  const getBookedCount = (hour) =>
+    (sharedRecovery || [])
+      .filter(r => r.date === currentDate && r.status !== 'Cancelled')
+      .filter(r => parseHours(r.time).includes(hour))
+      .reduce((sum, r) => sum + (r.players || 0), 0);
+
+  // Remaining capacity across all selected slots (use the tightest constraint)
+  const remainingForSelected = selectedSlots.length > 0
+    ? Math.min(...selectedSlots.map(h => 8 - getBookedCount(h)))
+    : 8;
+  const maxPeople = Math.max(1, remainingForSelected);
+
+  const toggleSlot = (h) => {
+    const remaining = 8 - getBookedCount(h);
+    if (remaining <= 0) return;
+    setSelectedSlots(prev => {
+      const next = prev.includes(h) ? prev.filter(s => s !== h) : [...prev, h];
+      // Clamp people to new tightest constraint
+      if (!prev.includes(h)) {
+        const newMin = Math.min(...[...prev, h].map(s => 8 - getBookedCount(s)));
+        if (people > newMin) setPeople(Math.max(1, newMin));
+      }
+      return next;
+    });
+  };
+
+  const total = RECOVERY_RATE_PER_HEAD * people * (selectedSlots.length || 0);
+  const hasPartialSlots = selectedSlots.some(h => getBookedCount(h) > 0);
+
   return (
     <div className="screen">
       <div className="screen-header">
@@ -1321,26 +1357,57 @@ function RecoveryInfoScreen({ navigate, recoveryPeople, setRecoveryPeople }) {
           ))}
         </div>
 
-        <div className="section-label">Number of People</div>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',border:'1px solid #ccc',borderRadius:4,marginBottom:6}}>
-          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>People (min 2 · max 8)</span>
-          <div className="stepper">
-            <button className="stepper-btn" onClick={() => setPeople(Math.max(2,people-1))}>−</button>
-            <span className="stepper-val">{people}</span>
-            <button className="stepper-btn" onClick={() => setPeople(Math.min(8,people+1))}>+</button>
-          </div>
-        </div>
-        <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:14,textAlign:'right'}}>LKR 500/person · capacity max 8</div>
-
         <div className="section-label">Select Date</div>
-        <DatePicker selected={dateIdx} onSelect={setDateIdx} />
+        <DatePicker selected={dateIdx} onSelect={idx => { setDateIdx(idx); setSelectedSlots([]); }} />
 
         <div className="section-label">Select Hour(s)</div>
-        <SlotGrid slots={RECOVERY_SLOTS} selectedSlots={selectedSlots} onToggle={toggleSlot} multiSelect={true} />
+        <div className="slot-grid" style={{marginBottom:14}}>
+          {HOURS.map(h => {
+            const booked = getBookedCount(h);
+            const remaining = 8 - booked;
+            const isFull = remaining <= 0;
+            const isSelected = selectedSlots.includes(h);
+            return (
+              <button key={h}
+                className={`slot-btn ${isFull ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
+                disabled={isFull}
+                onClick={() => toggleSlot(h)}
+                style={!isFull && booked > 0 && !isSelected ? {borderColor:'#b8860b',color:'#b8860b'} : {}}
+              >
+                <span style={{fontSize:9}}>{h}:00</span>
+                {isFull
+                  ? <span style={{fontSize:7}}>Full</span>
+                  : <span style={{fontSize:7, color: isSelected ? '#fff' : booked > 0 ? '#b8860b' : '#888'}}>
+                      {remaining}/8 left
+                    </span>
+                }
+              </button>
+            );
+          })}
+        </div>
 
-        {selectedSlots.length>0 && (
+        {hasPartialSlots && (
+          <div style={{fontFamily:'monospace',fontSize:10,color:'#7a5c00',marginBottom:10,padding:'6px 10px',background:'#fffbf0',border:'1px solid #b8860b',borderRadius:3}}>
+            ⚑ Selected slot(s) have existing court bookings — available spots shown above
+          </div>
+        )}
+
+        <div className="section-label">Number of People</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',border:'1px solid #ccc',borderRadius:4,marginBottom:4}}>
+          <span style={{fontFamily:'monospace',fontSize:13,color:'#888'}}>People</span>
+          <div className="stepper">
+            <button className="stepper-btn" onClick={() => setPeople(Math.max(1, people-1))}>−</button>
+            <span className="stepper-val">{people}</span>
+            <button className="stepper-btn" onClick={() => setPeople(Math.min(maxPeople, people+1))}>+</button>
+          </div>
+        </div>
+        <div style={{fontFamily:'monospace',fontSize:11,color:'#888',marginBottom:14,textAlign:'right'}}>
+          LKR 500/person · {selectedSlots.length > 0 ? `up to ${maxPeople} spots available` : 'max 8 per hour'}
+        </div>
+
+        {selectedSlots.length > 0 && (
           <div style={{border:'2px solid #333',borderRadius:4,padding:'10px 12px',marginBottom:16}}>
-            <div className="price-row"><span style={{color:'#888'}}>Recovery · {people} people × {selectedSlots.length} hr{selectedSlots.length>1?'s':''}</span><span>LKR {total.toLocaleString()}</span></div>
+            <div className="price-row"><span style={{color:'#888'}}>Recovery · {people} {people===1?'person':'people'} × {selectedSlots.length} hr{selectedSlots.length>1?'s':''}</span><span>LKR {total.toLocaleString()}</span></div>
             <div className="price-row total"><span>Total</span><span>LKR {total.toLocaleString()}</span></div>
           </div>
         )}
@@ -1350,7 +1417,7 @@ function RecoveryInfoScreen({ navigate, recoveryPeople, setRecoveryPeople }) {
         </button>
         <div style={{border:'1px solid #e0e0e0',borderRadius:4,padding:10,marginTop:12,background:'#fafafa'}}>
           <div style={{fontFamily:'monospace',fontSize:11,color:'#888',lineHeight:1.6}}>
-            💡 Booking a court? Recovery is auto-added as an add-on at checkout when you book 2+ hours.
+            💡 Booking a court? Recovery is auto-added at checkout when you book 2+ hours.
           </div>
         </div>
       </div>
@@ -1852,7 +1919,7 @@ function CustomerApp({ sharedBookings, setSharedBookings, sharedBids, setSharedB
   const [kidsAdded, setKidsAdded]           = useState(false);
   const [recoveryAdded, setRecoveryAdded]   = useState(false);
   const [kidsCount, setKidsCount]           = useState(1);
-  const [recoveryPeople, setRecoveryPeople] = useState(2);
+  const [recoveryPeople, setRecoveryPeople] = useState(1);
   const [playerProfile, setPlayerProfile]   = useState({ name:'Dusara', skillLevel:'Intermediate', sports:['Pickleball'], availability:['Sat','Sun'] });
   const [matchRequests, setMatchRequests]   = useState(MATCH_REQUESTS_INIT);
   const [playDates, setPlayDates]           = useState([]);
